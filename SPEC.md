@@ -129,8 +129,9 @@
 ## 6. 도메인 모델 (초안)
 
 - `Word`: id, english, korean(퍼즐용 한국어 뜻, 단어당 하나로 고정), partOfSpeech, definition(사전적 정의), difficulty, topic, example, active
-- `Puzzle`: id, size, seed, difficulty, topic, createdAt, type(NORMAL/DAILY)
+- `Puzzle`: id, size, seed, difficulty, topic(null이면 전체 주제), wordCount, createdAt, type(NORMAL/DAILY)
 - `PuzzleEntry`: id, puzzleId, wordId, startRow, startCol, direction, number
+- `PlaySession`: id(UUID), puzzleId, startedAt, finishedAt, status(IN_PROGRESS/COMPLETED/GAVE_UP), wrongCount, 맞힌 항목·힌트 사용 항목 (1단계는 익명 세션, 2단계에서 소유자(ownerType/ownerId)를 붙여 `PlayRecord`로 연결)
 - `User`: id, email, passwordHash, nickname, role, createdAt
 - `GuestAccount`: id(UUID), nickname, createdAt, migratedToUserId(nullable)
 - `PlayRecord`: id, puzzleId, ownerType, ownerId, elapsedSec, hintCount, wrongCount, completedAt
@@ -149,16 +150,19 @@
 - `POST /api/auth/guest` 게스트 생성 및 토큰 발급
 - `POST /api/auth/signup`, `POST /api/auth/login` (게스트 ID 포함 시 기록 이전)
 
-**퍼즐**
-- `GET /api/puzzles` 목록(난이도/주제 필터), `GET /api/puzzles/{id}` 구조와 힌트만 반환
-- `POST /api/puzzles/{id}/check` 채점
-- `POST /api/puzzles/{id}/hint` (첫 글자 공개), `POST /api/puzzles/{id}/reveal`
-- `POST /api/puzzles/{id}/definition-hint` 정의 힌트 (솔로 전용, 대련 퍼즐은 403)
+**퍼즐** (풀이 관련 요청은 `X-Play-Session` 헤더에 세션 ID를 담는다)
+- `GET /api/puzzles?difficulty&topic&size&page&pageSize` 목록, `GET /api/puzzles/{id}` 구조와 한국어 힌트만 반환 (`grid`: '.'=입력 칸, '#'=막힌 칸)
+- `POST /api/puzzles/{id}/start` 풀이 세션 생성 → `sessionId`
+- `POST /api/puzzles/{id}/check` 채점 (항목별 CORRECT/WRONG/INCOMPLETE, 글자 수가 같은 오답만 오답 수 집계)
+- `POST /api/puzzles/{id}/hint` (첫 글자 공개), `POST /api/puzzles/{id}/reveal` (정답 보기 = 포기, 세션 종료)
+- `POST /api/puzzles/{id}/definition-hint` 정의 힌트 (솔로 전용, 대련 퍼즐은 403 — 대련 구현 시 적용)
 - `GET /api/puzzles/daily`
+- 종료된 세션에 대한 요청은 409, 세션 누락/불일치는 400, 오류 본문은 `{code, message}`
+- 퍼즐 생성 풀 규칙: 난이도는 "이하"(EASY=쉬움, MEDIUM=쉬움+보통, HARD=전체), 주제는 선택
 
 **학습/기록**
 - `GET /api/me/progress`, `GET /api/me/wrong-answers`
-- `GET /api/words/{id}` 단어 카드 (이미 맞힌/공개된 단어 또는 완료된 퍼즐의 단어만 조회 가능)
+- `GET /api/words/{id}` 단어 카드 (`X-Play-Session` 필요, 해당 세션에서 맞힌/공개된 단어 또는 종료된 세션의 단어만 조회 가능, 아니면 403)
 - `GET/PUT /api/me/settings` 단어 뜻 표시 설정 (끔/뜻만/뜻+정의)
 
 **대련**
