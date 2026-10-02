@@ -33,6 +33,8 @@
 12. 문의(`Feedback`)의 작성자용 응답에는 영어 정답 단어를 넣지 않는다(`wordId`와 한국어 뜻만). 단어 신고는 풀이 도중에 하므로 정답이 새는 경로가 된다. 새 응답을 추가할 때 테스트로 확인한다.
 13. 업로드 파일은 `ImageSanitizer`를 거쳐 재인코딩한 결과만 `AttachmentStore`(웹 루트 밖, 서버가 만든 이름)에 저장한다. 사용자가 준 파일명·Content-Type·원본 바이트를 그대로 저장하거나 서빙하지 않는다.
 14. 응답에 CSP(`default-src 'self'`)가 붙는다. 프론트에서 인라인 스크립트나 `style` 속성(`setAttribute('style')`)을 쓰지 말고 `element.style.setProperty`를 쓴다.
+15. 대련 방(`crossword2.room`)은 서버 메모리 상태다. `Room`은 Spring 의존이 없는 순수 클래스(synchronized)이고, 방 구조 변경(생성/삭제/한 사람 한 방)은 `RoomRegistry`가 맡는다. 다른 참가자에게 내려가는 `RoomView`/이벤트에 계정 ID(`Owner`)를 넣지 않는다(`playerId`와 닉네임만).
+16. 웹소켓 메시지는 `StompAuthInterceptor`에서 인증·목적지·속도를 검사한다. 새 목적지를 추가하면 SEND/SUBSCRIBE 허용 규칙과 테스트를 함께 갱신하고, 명령 오류는 `/user/queue/errors`로만 돌려준다. 오류/응답에 정답 단어를 넣지 않는다.
 
 ## 명령어
 - 빌드/테스트: `./gradlew build`

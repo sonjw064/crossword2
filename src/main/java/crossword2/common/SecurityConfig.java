@@ -38,9 +38,11 @@ public class SecurityConfig {
 				.requestMatchers("/api/auth/**", "/api/health").permitAll()
 				.requestMatchers("/api/me", "/api/me/**").authenticated()
 				.requestMatchers("/api/feedback", "/api/feedback/**").authenticated()
+				.requestMatchers("/api/rooms", "/api/rooms/**").authenticated()
+				.requestMatchers("/ws", "/ws/**").permitAll() // 핸드셰이크는 열고, 인증은 STOMP CONNECT에서 한다
 				.requestMatchers("/api/admin/**").hasRole("ADMIN")
 				.requestMatchers("/api/**").permitAll()
-				.requestMatchers(HttpMethod.GET, "/", "/index.html", "/favicon.ico", "/css/**", "/js/**").permitAll()
+				.requestMatchers(HttpMethod.GET, "/", "/index.html", "/favicon.ico", "/css/**", "/js/**", "/room/*").permitAll()
 				.anyRequest().denyAll())
 			.oauth2ResourceServer(oauth -> oauth
 				.jwt(jwt -> jwt.jwtAuthenticationConverter(converter))

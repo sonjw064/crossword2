@@ -5,6 +5,8 @@ import { mountLogin, mountSignup } from './auth-views.js';
 import { mountProgress, mountWrongAnswers } from './progress-views.js';
 import { mountFeedbackForm, mountMyFeedback } from './feedback-views.js';
 import { unreadBadge } from './feedback-model.js';
+import { mountRoomHome, mountRoom } from './room-views.js';
+import { roomCodeFromPath } from './room-model.js';
 import * as api from './api.js';
 import { clear, h } from './dom.js';
 import * as auth from './auth.js';
@@ -55,7 +57,7 @@ function renderNav() {
     return;
   }
   navEl.append(
-    h('a', { href: '#/me' }, '내 기록'), h('a', { href: '#/wrong-answers' }, '오답노트'),
+    h('a', { href: '#/rooms' }, '함께 풀기'), h('a', { href: '#/me' }, '내 기록'), h('a', { href: '#/wrong-answers' }, '오답노트'),
     h('a', { href: '#/feedback' }, '문의하기'),
     h('span', { class: 'who' }, user.nickname, h('small', { class: 'muted' }, user.type === 'GUEST' ? ' (게스트)' : '')));
   if (user.type === 'MEMBER') {
@@ -90,6 +92,7 @@ function route() {
   const [hash, queryString = ''] = (location.hash || '#/').split('?');
   const query = new URLSearchParams(queryString);
   refreshBadge();
+  const room = hash.match(/^#\/room\/([^/]+)$/);
   const play = hash.match(/^#\/play\/(\d+)$/);
   if (play) {
     mountPlay(root, Number(play[1]), ctx, handle);
@@ -103,6 +106,10 @@ function route() {
     mountFeedbackForm(root, ctx, handle, query);
   } else if (hash === '#/my-feedback') {
     mountMyFeedback(root, ctx, handle);
+  } else if (hash === '#/rooms') {
+    mountRoomHome(root, ctx);
+  } else if (room) {
+    mountRoom(root, room[1], ctx, handle);
   } else if (hash === '#/login') {
     mountLogin(root, ctx);
   } else if (hash === '#/signup') {
@@ -116,4 +123,9 @@ function route() {
 // 로그인 상태가 바뀌면(로그인/로그아웃/토큰 만료) 헤더를 갱신한다
 auth.onChange(renderNav);
 window.addEventListener('hashchange', route);
+
+// 초대 링크(/room/ABC234)로 들어오면 주소를 해시 경로로 바꿔 같은 화면을 연다
+const invited = roomCodeFromPath(location.pathname);
+if (invited) history.replaceState(null, '', `/#/room/${invited}`);
+else if (location.pathname.startsWith('/room/')) history.replaceState(null, '', '/#/rooms');
 route();
