@@ -15,7 +15,7 @@ class AuthConfigTest {
 	private final AuthConfig config = new AuthConfig();
 
 	private static AuthProperties props(String secret) {
-		return new AuthProperties(secret, Duration.ofMinutes(30), Duration.ofDays(30), Duration.ofDays(90));
+		return new AuthProperties(secret, Duration.ofMinutes(30), Duration.ofDays(30), Duration.ofDays(90), Duration.ofDays(7));
 	}
 
 	@Test

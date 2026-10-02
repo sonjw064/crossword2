@@ -19,7 +19,7 @@ class JwtServiceTest {
 
 	private static final SecretKey KEY = new SecretKeySpec("0123456789abcdef0123456789abcdef".getBytes(), "HmacSHA256");
 	private static final AuthProperties PROPS = new AuthProperties(null, Duration.ofMinutes(30),
-			Duration.ofDays(30), Duration.ofDays(90));
+			Duration.ofDays(30), Duration.ofDays(90), Duration.ofDays(7));
 
 	private final MutableClock clock = new MutableClock(Instant.parse("2026-01-01T00:00:00Z"));
 	private final JwtService service = new JwtService(KEY, clock, PROPS);

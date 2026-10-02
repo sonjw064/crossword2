@@ -45,6 +45,10 @@ public class User {
 		this.createdAt = createdAt;
 	}
 
+	public void changeRole(Role newRole) {
+		this.role = newRole;
+	}
+
 	public Long getId() {
 		return id;
 	}

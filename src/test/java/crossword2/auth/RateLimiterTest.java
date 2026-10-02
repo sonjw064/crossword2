@@ -51,6 +51,22 @@ class RateLimiterTest {
 	}
 
 	@Test
+	void cleanupOnlyRemovesEntriesWhoseOwnWindowHasEnded() {
+		RateLimiter small = new RateLimiter(clock, 5);
+		Duration hour = Duration.ofHours(1);
+		small.tryAcquire("signup:1.2.3.4", 1, hour); // 1시간 창, 한도 소진
+		for (int i = 0; i < 10; i++) {
+			small.tryAcquire("login:" + i, 5, MINUTE); // 1분 창 항목으로 cleanup 기준 크기를 넘긴다
+		}
+		clock.advance(Duration.ofMinutes(2)); // 1분 창은 끝났고 1시간 창은 아직 유효
+
+		small.tryAcquire("login:trigger", 5, MINUTE); // 1분 창 요청이 cleanup을 일으킨다
+
+		assertThat(small.tryAcquire("signup:1.2.3.4", 1, hour)).as("1시간 제한이 초기화되면 안 된다").isFalse();
+		assertThat(small.size()).as("끝난 1분 창 항목은 정리된다").isLessThan(5);
+	}
+
+	@Test
 	void checkThrowsTooManyRequests() {
 		limiter.check("k", 1, MINUTE);
 

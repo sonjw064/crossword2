@@ -24,12 +24,13 @@
 7. 풀이 세션(`PlaySession`)의 상태를 바꾸는 코드는 `findForUpdate`(행 잠금)로 세션을 읽는다. 잠금 없이 읽고 수정하지 않는다.
 8. 시크릿(JWT 키, DB 비밀번호)은 코드에 쓰지 않고 환경변수로 받는다.
 9. 컨트롤러는 `@AuthenticationPrincipal Jwt`를 `Owner.fromJwt()`로 바꿔 쓴다(익명이면 null). 비밀번호는 BCrypt, refresh 토큰은 해시만 저장한다.
-10. 응답에 CSP(`default-src 'self'`)가 붙는다. 프론트에서 인라인 스크립트나 `style` 속성(`setAttribute('style')`)을 쓰지 말고 `element.style.setProperty`를 쓴다.
+10. 클라이언트 IP는 `request.getRemoteAddr()`만 쓰고 `X-Forwarded-For` 등을 직접 읽지 않는다(프록시 신뢰는 prod 설정의 `native` 전략과 `TRUSTED_PROXIES`로만 처리). 관리자 권한은 JWT claim만 믿지 말고 DB의 현재 role을 확인한다.
+11. 응답에 CSP(`default-src 'self'`)가 붙는다. 프론트에서 인라인 스크립트나 `style` 속성(`setAttribute('style')`)을 쓰지 말고 `element.style.setProperty`를 쓴다.
 
 ## 명령어
 - 빌드/테스트: `./gradlew build`
 - 테스트만: `./gradlew test`
-- 프론트 순수 로직 테스트: `node --test "src/test/js/*.test.mjs"` (Node 22+, npm 의존성 없음, Gradle 빌드와는 별개)
+- 프론트 로직 테스트(그리드 모델, 인증 상태): `node --test "src/test/js/*.test.mjs"` (Node 22+, npm 의존성 없음, Gradle 빌드와는 별개)
 - 실행: `./gradlew bootRun` (기본 H2, 운영은 `--spring.profiles.active=prod` + `DB_URL`/`DB_USERNAME`/`DB_PASSWORD`)
 
 ## 코드 스타일

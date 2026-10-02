@@ -68,7 +68,8 @@ public class TokenService {
 	/** 로그아웃: 이 토큰이 속한 family를 폐기한다. 모르는 토큰이어도 조용히 넘어간다. */
 	@Transactional
 	public void revoke(String rawRefreshToken) {
-		tokens.findByTokenHash(hash(rawRefreshToken))
+		// 교체(rotate)와 같은 행 잠금을 잡아, 동시에 교체된 새 토큰까지 함께 폐기되도록 직렬화한다
+		tokens.findByHashForUpdate(hash(rawRefreshToken))
 				.ifPresent(t -> tokens.revokeFamily(t.getFamilyId(), clock.instant()));
 	}
 

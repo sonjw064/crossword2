@@ -11,5 +11,6 @@ public record AuthProperties(
 		String jwtSecret,
 		@DefaultValue("30m") Duration accessTokenTtl,
 		@DefaultValue("30d") Duration memberRefreshTtl,
-		@DefaultValue("90d") Duration guestRefreshTtl) {
+		@DefaultValue("90d") Duration guestRefreshTtl,
+		@DefaultValue("7d") Duration refreshTokenRetention) {
 }

@@ -72,8 +72,12 @@ public class AuthConfig {
 		return new BCryptPasswordEncoder();
 	}
 
+	/**
+	 * 관리자 권한은 토큰의 role claim만 믿지 않고, claim이 ADMIN일 때 현재 DB의 role을 다시 확인한다(권한 회수 즉시 반영).
+	 * 일반 사용자 권한은 토큰이 갱신될 때(최대 access 토큰 유효 시간) 반영된다.
+	 */
 	@Bean
-	JwtAuthenticationConverter jwtAuthenticationConverter() {
+	JwtAuthenticationConverter jwtAuthenticationConverter(UserRepository users) {
 		JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
 		converter.setJwtGrantedAuthoritiesConverter(jwt -> {
 			List<GrantedAuthority> authorities = new ArrayList<>();
@@ -81,12 +85,20 @@ public class AuthConfig {
 				authorities.add(new SimpleGrantedAuthority("ROLE_GUEST"));
 			} else {
 				authorities.add(new SimpleGrantedAuthority("ROLE_USER"));
-				if (Role.ADMIN.name().equals(jwt.getClaimAsString("role"))) {
+				if (Role.ADMIN.name().equals(jwt.getClaimAsString("role")) && isCurrentlyAdmin(users, jwt.getSubject())) {
 					authorities.add(new SimpleGrantedAuthority("ROLE_ADMIN"));
 				}
 			}
 			return authorities;
 		});
 		return converter;
+	}
+
+	private static boolean isCurrentlyAdmin(UserRepository users, String subject) {
+		try {
+			return users.findById(Long.parseLong(subject)).map(u -> u.getRole() == Role.ADMIN).orElse(false);
+		} catch (NumberFormatException e) {
+			return false;
+		}
 	}
 }
