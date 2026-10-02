@@ -2,6 +2,7 @@ import { h, clear } from './dom.js';
 import * as api from './api.js';
 import * as auth from './auth.js';
 import { StompClient } from './stomp-client.js';
+import { createBattle } from './battle-views.js';
 import {
   DIFFICULTY_LABEL, MODE_LABEL, applySnapshot, connectionText, inviteUrl, isHost, parseRoomCode, roomErrorText, startState,
 } from './room-model.js';
@@ -132,6 +133,8 @@ function renderRoom(root, code, ctx, handle) {
   let me = null; // 내 playerId
   let state = 'connecting';
   let left = false;
+  let battle = null; // 경기 중/종료 후 화면(방송을 받을 때마다 갱신하되 DOM은 유지한다)
+  let lastSolved = []; // 서버가 기억하는 내가 맞힌 단어들(새로고침/재접속 뒤 칸 복원용)
 
   const banner = h('p', { class: 'conn-banner', role: 'status', hidden: true });
   const errorEl = h('p', { class: 'form-error', role: 'alert', hidden: true });
@@ -173,11 +176,15 @@ function renderRoom(root, code, ctx, handle) {
   client.subscribe('/user/queue/me', (ack) => {
     me = ack.playerId;
     room = applySnapshot(room, ack.room);
+    lastSolved = ack.solved ?? [];
+    battle?.restore(lastSolved);
     watchRoom();
     showError('');
     draw();
   });
+  client.subscribe('/user/queue/submit', (ack) => battle?.onAck(ack));
   client.subscribe('/user/queue/errors', (err) => {
+    if (battle?.onError(err.code)) return; // 제출 오류는 경기 화면이 안내한다
     showError(roomErrorText(err));
     if (!room && ['ROOM_NOT_FOUND', 'ROOM_FULL', 'ROOM_IN_PROGRESS', 'ALREADY_IN_ROOM'].includes(err.code)) {
       client.close(); // 들어갈 수 없는 방이면 재접속을 멈춘다
@@ -226,10 +233,40 @@ function renderRoom(root, code, ctx, handle) {
     banner.hidden = !text || left;
     clear(body);
     if (!room) {
+      stopBattle();
       body.append(h('p', {}, state === 'connected' ? '입장하는 중…' : ''), h('a', { class: 'button', href: '#/rooms' }, '나가기'));
       return;
     }
+    if (room.status === 'PLAYING' || room.status === 'ENDED') {
+      if (!battle) {
+        battle = createBattle({ code, ctx, command, isHost: () => isHost(room, me) });
+        battle.restore(lastSolved);
+      }
+      battle.update(room, me);
+      body.append(battle.element, leaveButton());
+      return;
+    }
+    stopBattle(); // 다시 하기로 대기실에 돌아오면 경기 화면을 버린다
     body.append(playersView(), settingsView(), actionsView());
+  }
+
+  function stopBattle() {
+    battle?.destroy();
+    battle = null;
+  }
+
+  function leaveButton() {
+    return h('p', {}, h('button', {
+      type: 'button',
+      class: 'link',
+      onclick: () => {
+        if (room?.status === 'PLAYING' && !confirm('경기 중에 나가면 이어서 할 수 없어요. 나갈까요?')) return;
+        left = true;
+        command('leave');
+        client.close();
+        ctx.navigate('#/rooms');
+      },
+    }, '방 나가기'));
   }
 
   function playersView() {
@@ -259,9 +296,6 @@ function renderRoom(root, code, ctx, handle) {
   }
 
   function actionsView() {
-    if (room.status === 'PLAYING') {
-      return h('p', { class: 'notice' }, '경기가 시작됐어요! (대련 진행 화면은 다음 단계에서 제공돼요)');
-    }
     const host = isHost(room, me);
     const start = startState(room, me);
     const link = inviteUrl(location.origin, code);
@@ -305,6 +339,7 @@ function renderRoom(root, code, ctx, handle) {
   handle.cleanup = () => {
     clearTimeout(joinTimer);
     clearTimeout(syncTimer);
+    stopBattle();
     client.close();
   }; // 화면을 떠나면 연결을 닫는다(서버는 유예 시간 동안 자리를 지켜 준다)
   draw();

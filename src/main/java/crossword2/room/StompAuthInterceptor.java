@@ -115,7 +115,8 @@ public class StompAuthInterceptor implements ChannelInterceptor {
 		if (destination == null) {
 			throw new MessagingException("destination not allowed");
 		}
-		if (destination.equals("/user/queue/me") || destination.equals("/user/queue/errors")) {
+		if (destination.equals("/user/queue/me") || destination.equals("/user/queue/errors")
+				|| destination.equals("/user/queue/submit")) {
 			return;
 		}
 		if (destination.startsWith(RoomService.TOPIC)) {

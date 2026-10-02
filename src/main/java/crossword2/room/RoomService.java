@@ -35,9 +35,13 @@ public class RoomService {
 	private final RoomPuzzleSelector selector;
 	private final SimpMessagingTemplate messaging;
 	private final Clock clock;
+	private final MatchRecorder recorder;
+	private final MatchCards cards;
 
 	public RoomService(RoomRegistry registry, RoomProperties props, RateLimiter rateLimiter, RoomPuzzleSelector selector,
-			SimpMessagingTemplate messaging, Clock clock) {
+			SimpMessagingTemplate messaging, Clock clock, MatchRecorder recorder, MatchCards cards) {
+		this.recorder = recorder;
+		this.cards = cards;
 		this.registry = registry;
 		this.props = props;
 		this.rateLimiter = rateLimiter;
@@ -75,14 +79,14 @@ public class RoomService {
 		Room.JoinOutcome outcome = registry.join(room, owner, nickname, sessionId, clock.instant());
 		RoomView view = room.view();
 		broadcast(view.code(), outcome.rejoined() ? RoomEvent.Type.RECONNECT : RoomEvent.Type.JOIN, outcome.playerId(), view);
-		return new JoinAck(outcome.playerId(), outcome.rejoined(), view);
+		return new JoinAck(outcome.playerId(), outcome.rejoined(), view, room.solvedWordsOf(owner));
 	}
 
 	public JoinAck sync(String code, Owner owner) {
 		Room room = registry.require(code);
 		int playerId = room.playerIdOf(owner)
 				.orElseThrow(() -> new ApiException(HttpStatus.FORBIDDEN, "NOT_IN_ROOM", "you are not in this room"));
-		return new JoinAck(playerId, true, room.view());
+		return new JoinAck(playerId, true, room.view(), room.solvedWordsOf(owner));
 	}
 
 	public void ready(String code, Owner owner, boolean ready) {
@@ -98,6 +102,7 @@ public class RoomService {
 		if (!outcome.removed()) {
 			throw new ApiException(HttpStatus.FORBIDDEN, "NOT_IN_ROOM", "you are not in this room");
 		}
+		finishIfOver(room);
 		afterRemoval(room, playerId, outcome.newHost(), RoomEvent.Type.LEAVE);
 	}
 
@@ -109,16 +114,49 @@ public class RoomService {
 		broadcast(room, RoomEvent.Type.SETTINGS, owner);
 	}
 
-	/** 시작 조건을 확인하고 퍼즐을 골라 경기를 시작한다(실제 경기 진행은 레이스 모드 구현에서). */
+	/** 시작 조건을 확인하고 퍼즐을 골라 경기를 시작한다. 카운트다운이 끝나면 제출할 수 있다. */
 	public void start(String code, Owner owner) {
 		Room room = registry.require(code);
 		room.checkCanStart(owner);
-		RoomPuzzleSelector.Selection selection = selector.pick(room.settings(), room.owners());
+		RoomPuzzleSelector.Selection selection = selector.pick(room.settings(), room.owners(), room.playedPuzzleIds());
 		if (selection == null) {
 			throw new ApiException(HttpStatus.CONFLICT, "NO_PUZZLE_AVAILABLE", "there is no puzzle for these settings");
 		}
-		room.markStarted(selection.puzzleId(), clock.instant());
+		room.startMatch(owner, selection.puzzleId(), selector.entriesOf(selection.puzzleId()), clock.instant(),
+				props.matchCountdown());
 		broadcast(room, RoomEvent.Type.START, owner);
+	}
+
+	/** 경기 중 한 단어를 제출한다. 점수가 오르면 모두에게 진행 상황을 방송하고, 끝나는 조건이면 경기를 마친다. */
+	public RoomDtos.SubmitAck submit(String code, Owner owner, RoomDtos.SubmitCommand command) {
+		if (command == null || command.entryId() == null || command.answer() == null || command.answer().length() > 40) {
+			throw new ApiException(HttpStatus.BAD_REQUEST, "MALFORMED_REQUEST", "entryId and answer are required");
+		}
+		Room room = registry.require(code);
+		Match.SubmitResult r = room.submit(owner, command.entryId(), command.answer(), clock.instant());
+		if (r.status() == Match.SubmitStatus.CORRECT) {
+			broadcast(room, RoomEvent.Type.SCORE_UPDATE, owner);
+			finishIfOver(room);
+		}
+		return new RoomDtos.SubmitAck(r.entryId(), r.status(), r.gained(), r.bonus(), r.score(), r.solved(), r.completed());
+	}
+
+	/** 경기가 끝난 방을 대기실로 되돌린다(방장만). */
+	public void rematch(String code, Owner owner) {
+		Room room = registry.require(code);
+		room.rematch(owner);
+		broadcast(room, RoomEvent.Type.REMATCH, owner);
+	}
+
+	/** 끝난 경기의 순위와 단어 카드. 그 경기의 참가자만, 경기가 끝난 뒤에만 볼 수 있다(정답이 공개되는 대련 종료 후 경로). */
+	public RoomDtos.MatchResultView result(String code, Owner owner) {
+		Room room = registry.require(code);
+		MatchOutcome outcome = room.outcomeFor(owner);
+		List<RoomDtos.StandingView> standings = outcome.standings().stream()
+				.map(s -> new RoomDtos.StandingView(s.rank(), s.nickname(), s.score(), s.solved(), s.abandoned(),
+						s.owner().equals(owner)))
+				.toList();
+		return new RoomDtos.MatchResultView(outcome.puzzleId(), standings, cards.cardsOf(outcome));
 	}
 
 	// ---------- 연결/정리 ----------
@@ -134,6 +172,9 @@ public class RoomService {
 	public void sweep() {
 		List<RoomRegistry.SweepEvent> events = registry.sweep(clock.instant());
 		for (RoomRegistry.SweepEvent e : events) {
+			if (e.finished() != null) {
+				onFinished(e.finished(), e.view());
+			}
 			if (e.roomRemoved()) {
 				broadcast(e.code(), RoomEvent.Type.CLOSED, null, e.view());
 			} else {
@@ -155,8 +196,23 @@ public class RoomService {
 		int playerId = r.playerIdOf(owner).orElse(0);
 		Room.LeaveOutcome outcome = registry.leave(r, owner, clock.instant());
 		if (outcome.removed()) {
+			finishIfOver(r);
 			afterRemoval(r, playerId, outcome.newHost(), RoomEvent.Type.LEAVE);
 		}
+	}
+
+	/** 끝날 조건이 되었으면 경기를 마치고 결과를 저장한 뒤 모두에게 알린다. */
+	private void finishIfOver(Room room) {
+		room.tryFinish(clock.instant()).ifPresent(outcome -> onFinished(outcome, room.view()));
+	}
+
+	private void onFinished(MatchOutcome outcome, RoomView view) {
+		try {
+			recorder.record(outcome);
+		} catch (RuntimeException e) {
+			log.error("Could not save the result of the match in room {}", outcome.code(), e); // 저장 실패가 경기 종료 알림을 막지 않게 한다
+		}
+		broadcast(outcome.code(), RoomEvent.Type.END, null, view);
 	}
 
 	private void afterRemoval(Room room, int playerId, Owner newHost, RoomEvent.Type type) {

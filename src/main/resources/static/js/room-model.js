@@ -66,6 +66,7 @@ const ERROR_TEXT = {
   RATE_LIMITED: '요청이 너무 많아요. 잠시 후 다시 시도해 주세요.',
   INVALID_STATE: '지금은 할 수 없는 동작이에요.',
   MALFORMED_REQUEST: '요청 형식이 올바르지 않아요.',
+  MATCH_NOT_ENDED: '아직 경기가 끝나지 않았어요.',
 };
 
 /** 서버가 보낸 오류를 사용자 문구로. ALREADY_IN_ROOM은 서버 메시지에 든 방 코드를 덧붙인다. */

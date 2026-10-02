@@ -39,6 +39,7 @@ export const definitionHint = (id, session, entryId) =>
 export const reveal = (id, session) => request('POST', `/api/puzzles/${id}/reveal`, { session, body: {} });
 export const wordCard = (wordId, session) => request('GET', `/api/words/${wordId}`, { session });
 export const createRoom = (settings) => request('POST', '/api/rooms', { body: settings });
+export const getRoomResult = (code) => request('GET', `/api/rooms/${code}/result`);
 export const getMe = () => request('GET', '/api/me');
 
 export const getProgress = ({ page = 0, pageSize = 20 } = {}) =>

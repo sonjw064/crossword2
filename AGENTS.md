@@ -14,13 +14,13 @@
 
 ## 핵심 규칙
 1. 그리드 생성과 채점은 서버에서만 한다. **API 응답에 정답 단어를 포함하지 않는다.**
-   예외는 SPEC 3장에 정한 두 경로뿐이다: 세션에서 맞힌 단어의 카드, 정답 보기(`reveal`)로 세션을 종료한 뒤의 응답.
+   예외는 SPEC 3장에 정한 경로뿐이다: 세션에서 맞힌 단어의 카드, 정답 보기(`reveal`)로 세션을 종료한 뒤의 응답, 오답노트, 대련에서 경기 종료 후 결과 카드와 본인이 맞힌 단어(`solved`).
    새 응답을 추가할 때 이 외의 경로에 정답이 실리지 않는지 테스트로 확인한다.
 2. 그리드 생성기(`crossword2.grid`)는 Spring 의존이 없는 순수 Java이며 seed 기반으로 결정적이어야 한다.
 3. 퍼즐은 미리 생성해 DB에 저장하고 조회한다. 요청 시 즉석 생성 금지.
 4. API는 `/api/...` 로 분리한다.
 5. 모든 사용자 입력은 서버에서 검증하고 출력 시 이스케이프한다.
-6. 대련 중에는 정의 힌트/단어 카드 조회를 서버가 차단한다.
+6. 대련 중(경기 진행 중인 방의 참가자)에는 솔로 풀이 기능 전체(세션 시작, 채점, 힌트, 정의 힌트, 정답 보기, 단어 카드)를 서버가 403으로 막는다(`PlayRestrictions`). `PlayService`에 솔로 기능을 추가하면 이 확인을 넣는다.
 7. 풀이 세션(`PlaySession`)의 상태를 바꾸는 코드는 `findForUpdate`(행 잠금)로 세션을 읽는다. 잠금 없이 읽고 수정하지 않는다.
    잠금 순서는 항상 **계정(회원/게스트) 행 → 세션 행**이다(`AccountLock`). 게스트 이전은 게스트 계정 → 회원 계정 → 데이터 순서. 이 순서를 어기면 교착이 생긴다.
    사용자별 기록(`PlayRecord`, `WrongAnswer`)은 풀이 종료 시 `PlayFinished` 이벤트로 같은 트랜잭션에서 남긴다.
@@ -35,6 +35,7 @@
 14. 응답에 CSP(`default-src 'self'`)가 붙는다. 프론트에서 인라인 스크립트나 `style` 속성(`setAttribute('style')`)을 쓰지 말고 `element.style.setProperty`를 쓴다.
 15. 대련 방(`crossword2.room`)은 서버 메모리 상태다. `Room`은 Spring 의존이 없는 순수 클래스(synchronized)이고, 방 구조 변경(생성/삭제/한 사람 한 방)은 `RoomRegistry`가 맡는다. 다른 참가자에게 내려가는 `RoomView`/이벤트에 계정 ID(`Owner`)를 넣지 않는다(`playerId`와 닉네임만).
 16. 웹소켓 메시지는 `StompAuthInterceptor`에서 인증·목적지·속도를 검사한다. 새 목적지를 추가하면 SEND/SUBSCRIBE 허용 규칙과 테스트를 함께 갱신하고, 명령 오류는 `/user/queue/errors`로만 돌려준다. 오류/응답에 정답 단어를 넣지 않는다.
+17. 대련 경기 상태(`Match`)의 정답은 서버 메모리에만 있고 `toString`/공개 상태(`RoomView.MatchView`)에 싣지 않는다. 경기 결과를 저장하는 코드는 계정 행을 정해진 순서로 잠근 뒤 `AccountLock.lockCurrent`로 현재 소유자를 얻어 쓴다. 대련 데이터(`MatchParticipant`)는 `MatchMigrator`로 이전한다.
 
 ## 명령어
 - 빌드/테스트: `./gradlew build`

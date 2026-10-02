@@ -35,6 +35,11 @@ class RoomTest {
 		return room;
 	}
 
+	/** 정답이 "cat"(항목 1)과 "dog"(항목 2)인 퍼즐로 경기를 바로 시작한다(카운트다운 없음). */
+	static void startMatch(Room room, long puzzleId, Instant now) {
+		room.startMatch(HOST, puzzleId, List.of(new Match.Entry(1, 11, "cat"), new Match.Entry(2, 12, "dog")), now, Duration.ZERO);
+	}
+
 	private static void assertError(Throwable thrown, int status, String code) {
 		assertThat(thrown).isInstanceOfSatisfying(ApiException.class, e -> {
 			assertThat(e.status().value()).isEqualTo(status);
@@ -100,7 +105,7 @@ class RoomTest {
 		room.join(BOB, "밥", "s-bob", T0);
 		room.setReady(BOB, true);
 		room.checkCanStart(HOST);
-		room.markStarted(42L, T0.plusSeconds(1));
+		startMatch(room, 42L, T0.plusSeconds(1));
 
 		assertThatThrownBy(() -> room.join(CAT, "캣", "s-cat", T0.plusSeconds(2)))
 				.satisfies(t -> assertError(t, 409, "ROOM_IN_PROGRESS"));
@@ -194,7 +199,7 @@ class RoomTest {
 		room.setReady(BOB, true);
 		assertThat(room.view().puzzleId()).isNull();
 
-		room.markStarted(77L, T0.plusSeconds(1));
+		startMatch(room, 77L, T0.plusSeconds(1));
 
 		assertThat(room.status()).isEqualTo(RoomStatus.PLAYING);
 		assertThat(room.view().puzzleId()).isEqualTo(77L);
@@ -237,7 +242,7 @@ class RoomTest {
 
 		room.setReady(BOB, true);
 		room.setReady(CAT, true);
-		room.markStarted(1L, T0);
+		startMatch(room, 1L, T0);
 		assertThatThrownBy(() -> room.updateSettings(HOST, settings(4))).satisfies(t -> assertError(t, 409, "INVALID_STATE"));
 	}
 
@@ -302,15 +307,23 @@ class RoomTest {
 	}
 
 	@Test
-	void duringAMatchDisconnectedPlayersKeepTheirSeats() {
+	void duringAMatchADisconnectedPlayerLosesTheSeatAfterTheGraceButKeepsTheirScore() {
 		Room room = room(3);
 		room.join(BOB, "밥", "s-bob", T0);
 		room.setReady(BOB, true);
-		room.markStarted(5L, T0);
-		room.disconnect("s-bob", T0.plusSeconds(1));
+		startMatch(room, 5L, T0);
+		room.submit(BOB, 1, "cat", T0.plusSeconds(1));
+		room.disconnect("s-bob", T0.plusSeconds(2));
 
-		assertThat(room.sweep(T0.plusSeconds(3600), GRACE).removed()).isEmpty();
-		assertThat(room.contains(BOB)).isTrue();
+		assertThat(room.sweep(T0.plusSeconds(30), GRACE).removed()).as("유예 안에서는 자리를 지킨다").isEmpty();
+		assertThat(room.sweep(T0.plusSeconds(70), GRACE).removed()).containsExactly(BOB);
+
+		assertThat(room.contains(BOB)).isFalse();
+		assertThat(room.view().match().progress()).filteredOn(p -> p.playerId() == 2)
+				.singleElement().satisfies(p -> {
+					assertThat(p.abandoned()).isTrue();
+					assertThat(p.score()).isEqualTo(30);
+				});
 	}
 
 	@Test
@@ -353,5 +366,143 @@ class RoomTest {
 		room.leave(BOB, T0);
 
 		assertThat(List.of(v0, v1, v2, room.version())).isSorted().doesNotHaveDuplicates();
+	}
+
+	// ---- 경기 진행 ----
+
+	private static Room playing() {
+		Room room = room(3);
+		room.join(BOB, "밥", "s-bob", T0);
+		room.setReady(BOB, true);
+		startMatch(room, 5L, T0);
+		return room;
+	}
+
+	@Test
+	void startingARoomWhoseConditionsNoLongerHoldIsRefused() {
+		Room room = room(3);
+		room.join(BOB, "밥", "s-bob", T0);
+		room.setReady(BOB, true);
+		room.disconnect("s-bob", T0.plusSeconds(1)); // 확인 뒤에 밥의 연결이 끊겼다
+
+		assertThatThrownBy(() -> startMatch(room, 5L, T0.plusSeconds(2))).satisfies(t -> assertError(t, 409, "NOT_ALL_READY"));
+		assertThat(room.status()).isEqualTo(RoomStatus.WAITING);
+	}
+
+	@Test
+	void theMatchViewExistsOnlyOnceStarted() {
+		Room room = room(3);
+		room.join(BOB, "밥", "s-bob", T0);
+		assertThat(room.view().match()).isNull();
+
+		room.setReady(BOB, true);
+		startMatch(room, 5L, T0);
+
+		assertThat(room.view().match().totalEntries()).isEqualTo(2);
+		assertThat(room.view().match().progress()).hasSize(2);
+	}
+
+	@Test
+	void onlyParticipantsCanSubmitAndOnlyDuringAMatch() {
+		Room waiting = room(3);
+		assertThatThrownBy(() -> waiting.submit(HOST, 1, "cat", T0)).satisfies(t -> assertError(t, 409, "INVALID_STATE"));
+
+		Room room = playing();
+		assertThatThrownBy(() -> room.submit(CAT, 1, "cat", T0)).satisfies(t -> assertError(t, 403, "NOT_IN_ROOM"));
+	}
+
+	@Test
+	void onlyScoringSubmissionsBumpTheVersion() {
+		Room room = playing();
+		long v = room.version();
+
+		room.submit(BOB, 1, "xyz", T0.plusSeconds(1)); // 틀림
+		assertThat(room.version()).isEqualTo(v);
+		room.submit(BOB, 1, "cat", T0.plusSeconds(2));
+		assertThat(room.version()).isEqualTo(v + 1);
+	}
+
+	@Test
+	void theMatchEndsWhenTimeRunsOutAndOnlyOnce() {
+		Room room = playing();
+		room.submit(BOB, 1, "cat", T0.plusSeconds(1));
+
+		assertThat(room.tryFinish(T0.plusSeconds(299))).isEmpty();
+		MatchOutcome outcome = room.tryFinish(T0.plusSeconds(300)).orElseThrow();
+
+		assertThat(outcome.standings()).extracting(Match.Standing::playerId).containsExactly(2, 1);
+		assertThat(room.status()).isEqualTo(RoomStatus.ENDED);
+		assertThat(room.tryFinish(T0.plusSeconds(400))).as("두 번 끝나지 않는다").isEmpty();
+	}
+
+	@Test
+	void leavingDuringAMatchAbandonsButKeepsTheScoreInTheOutcome() {
+		Room room = playing();
+		room.submit(BOB, 1, "cat", T0.plusSeconds(1));
+
+		room.leave(BOB, T0.plusSeconds(2));
+		room.leave(HOST, T0.plusSeconds(3));
+		MatchOutcome outcome = room.tryFinish(T0.plusSeconds(4)).orElseThrow();
+
+		assertThat(outcome.standings().get(0).nickname()).isEqualTo("밥");
+		assertThat(outcome.standings().get(0).abandoned()).isTrue();
+		assertThat(outcome.standings().get(0).score()).isEqualTo(30);
+	}
+
+	@Test
+	void theResultIsOnlyForThatMatchsParticipantsAndOnlyAfterItEnded() {
+		Room room = playing();
+		assertThatThrownBy(() -> room.outcomeFor(HOST)).satisfies(t -> assertError(t, 409, "MATCH_NOT_ENDED"));
+
+		room.tryFinish(T0.plusSeconds(300));
+
+		assertThat(room.outcomeFor(BOB).puzzleId()).isEqualTo(5L);
+		assertThatThrownBy(() -> room.outcomeFor(CAT)).satisfies(t -> assertError(t, 403, "NOT_IN_ROOM"));
+	}
+
+	@Test
+	void aRematchGoesBackToTheLobbyAndHidesThePreviousResult() {
+		Room room = playing();
+		room.tryFinish(T0.plusSeconds(300));
+
+		assertThatThrownBy(() -> room.rematch(BOB)).satisfies(t -> assertError(t, 403, "NOT_HOST"));
+		room.rematch(HOST);
+
+		assertThat(room.status()).isEqualTo(RoomStatus.WAITING);
+		assertThat(room.view().puzzleId()).isNull();
+		assertThat(room.view().match()).isNull();
+		assertThat(room.view().players()).filteredOn(p -> !p.host()).allMatch(p -> !p.ready());
+		assertThatThrownBy(() -> room.outcomeFor(BOB)).satisfies(t -> assertError(t, 409, "MATCH_NOT_ENDED"));
+		assertThat(room.playedPuzzleIds()).containsExactly(5L);
+	}
+
+	@Test
+	void aRematchCannotStartWhileTheMatchIsStillRunning() {
+		Room room = playing();
+
+		assertThatThrownBy(() -> room.rematch(HOST)).satisfies(t -> assertError(t, 409, "INVALID_STATE"));
+	}
+
+	@Test
+	void theResultOfAnEarlierMatchIsHiddenWhileTheNextOneRuns() {
+		Room room = playing();
+		room.tryFinish(T0.plusSeconds(300));
+		room.rematch(HOST);
+		room.setReady(BOB, true);
+		startMatch(room, 6L, T0.plusSeconds(400));
+
+		assertThatThrownBy(() -> room.outcomeFor(BOB)).satisfies(t -> assertError(t, 409, "MATCH_NOT_ENDED"));
+	}
+
+	@Test
+	void onlyPlayersInAMatchCountAsPlaying() {
+		Room room = playing();
+
+		assertThat(room.isPlaying(BOB)).isTrue();
+		assertThat(room.isPlaying(CAT)).isFalse();
+		room.leave(BOB, T0.plusSeconds(1));
+		assertThat(room.isPlaying(BOB)).isFalse();
+		room.tryFinish(T0.plusSeconds(300));
+		assertThat(room.isPlaying(HOST)).isFalse();
 	}
 }

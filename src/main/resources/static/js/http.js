@@ -25,6 +25,8 @@ const MESSAGES = {
   ATTACHMENT_TOO_LARGE: '스크린샷이 너무 커요. 2MB 이하로 올려 주세요.',
   MALFORMED_REQUEST: '요청 형식이 올바르지 않아요.',
   GUEST_MIGRATED: '이 게스트는 이미 회원으로 이전됐어요. 다시 로그인해 주세요.',
+  BATTLE_IN_PROGRESS: '대련 중에는 힌트, 정답 보기, 단어 카드를 쓸 수 없어요.',
+  MATCH_NOT_ENDED: '아직 경기가 끝나지 않았어요.',
   REPLY_NOT_FOUND: '답변을 찾을 수 없어요.',
 };
 

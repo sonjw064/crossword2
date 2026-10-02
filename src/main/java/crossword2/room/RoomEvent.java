@@ -7,6 +7,6 @@ package crossword2.room;
 public record RoomEvent(Type type, Integer playerId, RoomView room) {
 
 	public enum Type {
-		JOIN, RECONNECT, LEAVE, DISCONNECT, READY, SETTINGS, HOST_CHANGED, START, CLOSED
+		JOIN, RECONNECT, LEAVE, DISCONNECT, READY, SETTINGS, HOST_CHANGED, START, SCORE_UPDATE, END, REMATCH, CLOSED
 	}
 }

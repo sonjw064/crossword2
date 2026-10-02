@@ -47,6 +47,17 @@ class RoomMessageController {
 		return rooms.sync(code, RoomPrincipal.of(principal).owner());
 	}
 
+	@MessageMapping("/rooms/{code}/submit")
+	@SendToUser(destinations = "/queue/submit", broadcast = false)
+	RoomDtos.SubmitAck submit(@DestinationVariable String code, Principal principal, RoomDtos.SubmitCommand command) {
+		return rooms.submit(code, RoomPrincipal.of(principal).owner(), command);
+	}
+
+	@MessageMapping("/rooms/{code}/rematch")
+	void rematch(@DestinationVariable String code, Principal principal) {
+		rooms.rematch(code, RoomPrincipal.of(principal).owner());
+	}
+
 	@MessageMapping("/rooms/{code}/ready")
 	void ready(@DestinationVariable String code, Principal principal, ReadyCommand command) {
 		rooms.ready(code, RoomPrincipal.of(principal).owner(), command.ready());

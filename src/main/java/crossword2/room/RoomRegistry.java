@@ -28,7 +28,9 @@ public class RoomRegistry {
 	public record Binding(String code, Owner owner) {
 	}
 
-	public record SweepEvent(String code, List<Owner> removed, Owner newHost, boolean roomRemoved, RoomView view) {
+	/** @param finished 이 정리 중에 끝난 경기(시간 초과, 모두 이탈)의 결과. 없으면 null */
+	public record SweepEvent(String code, List<Owner> removed, Owner newHost, boolean roomRemoved, RoomView view,
+			MatchOutcome finished) {
 	}
 
 	private final Map<String, Room> rooms = new ConcurrentHashMap<>();
@@ -115,13 +117,14 @@ public class RoomRegistry {
 		for (Room room : new ArrayList<>(rooms.values())) {
 			Room.SweepOutcome outcome = room.sweep(now, props.reconnectGrace());
 			outcome.removed().forEach(this::forget);
+			MatchOutcome finished = room.tryFinish(now).orElse(null); // 방이 지워지기 전에 끝난 경기를 거둔다
 			boolean expired = room.isExpired(now, props.emptyRoomTtl());
 			if (expired) {
 				room.owners().forEach(this::forget);
 				rooms.remove(room.code());
 			}
-			if (!outcome.removed().isEmpty() || expired) {
-				events.add(new SweepEvent(room.code(), outcome.removed(), outcome.newHost(), expired, room.view()));
+			if (!outcome.removed().isEmpty() || expired || finished != null) {
+				events.add(new SweepEvent(room.code(), outcome.removed(), outcome.newHost(), expired, room.view(), finished));
 			}
 		}
 		return events;

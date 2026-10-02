@@ -14,6 +14,7 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
  * @param emptyRoomTtl 연결된 참가자가 한 명도 없는 방을 삭제하기까지의 시간
  * @param messagesPer10Seconds 웹소켓 세션 하나가 10초 동안 보낼 수 있는 메시지 수
  * @param maxMessageBytes 웹소켓 메시지 한 건의 최대 크기
+ * @param matchCountdown 경기를 시작한 뒤 제출을 받기 시작하기까지의 카운트다운
  * @param enabledModes 지금 선택할 수 있는 모드(구현된 모드만)
  */
 @ConfigurationProperties("app.room")
@@ -27,5 +28,6 @@ public record RoomProperties(
 		@DefaultValue("60") int joinPerMinutePerIp,
 		@DefaultValue("100") int messagesPer10Seconds,
 		@DefaultValue("16384") int maxMessageBytes,
+		@DefaultValue("3s") Duration matchCountdown,
 		@DefaultValue("RACE") Set<RoomMode> enabledModes) {
 }

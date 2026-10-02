@@ -24,7 +24,7 @@ class RoomLifecycle {
 		rooms.onDisconnect(event.getSessionId());
 	}
 
-	@Scheduled(fixedDelay = 10_000, initialDelay = 10_000)
+	@Scheduled(fixedDelay = 1_000, initialDelay = 1_000)
 	void sweep() {
 		try {
 			rooms.sweep();

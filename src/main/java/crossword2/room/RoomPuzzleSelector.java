@@ -45,6 +45,16 @@ public class RoomPuzzleSelector {
 		return puzzles.count(matching(settings));
 	}
 
+	/** 경기 채점에 쓸 퍼즐의 항목과 정답. 서버 메모리에만 두고 어떤 응답에도 싣지 않는다. */
+	@Transactional(readOnly = true)
+	List<Match.Entry> entriesOf(long puzzleId) {
+		Puzzle puzzle = puzzles.findWithEntriesById(puzzleId)
+				.orElseThrow(() -> new crossword2.common.ApiException(org.springframework.http.HttpStatus.NOT_FOUND,
+						"PUZZLE_NOT_FOUND", "puzzle not found"));
+		return puzzle.getEntries().stream()
+				.map(e -> new Match.Entry(e.getId(), e.getWord().getId(), e.getWord().getEnglish())).toList();
+	}
+
 	/**
 	 * 조건에 맞는 퍼즐 중 참가자 누구도 완료한 적 없는 것을 무작위로 고른다. 모두 푼 적이 있다면 그 중에서 고르고 알려준다.
 	 *
@@ -52,11 +62,17 @@ public class RoomPuzzleSelector {
 	 */
 	@Transactional(readOnly = true)
 	public Selection pick(RoomSettings settings, List<Owner> participants) {
+		return pick(settings, participants, Set.of());
+	}
+
+	/** {@code avoid}는 이 방에서 이미 한 퍼즐들이다(재경기에서 같은 퍼즐이 연달아 나오지 않게 한다). */
+	@Transactional(readOnly = true)
+	public Selection pick(RoomSettings settings, List<Owner> participants, Set<Long> avoid) {
 		List<Long> ids = puzzles.findAll(matching(settings)).stream().map(Puzzle::getId).toList();
 		if (ids.isEmpty()) {
 			return null;
 		}
-		Set<Long> known = new HashSet<>();
+		Set<Long> known = new HashSet<>(avoid);
 		for (Owner owner : participants) {
 			known.addAll(records.distinctPuzzleIds(owner.type(), owner.id(), PlayStatus.COMPLETED));
 		}

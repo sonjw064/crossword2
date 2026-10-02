@@ -237,3 +237,22 @@ button.link { border: 0; background: none; padding: 0; color: var(--accent); tex
 .invite input { flex: 1; min-width: 200px; }
 .code-input { text-transform: uppercase; letter-spacing: 0.2em; width: 9ch; }
 .inline-form { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 16px; }
+
+/* ---- 대련 경기 ---- */
+.battle-banner { padding: 10px 14px; border-radius: var(--radius); background: var(--accent-soft); font-weight: 700; font-variant-numeric: tabular-nums; margin-bottom: 12px; }
+.battle-banner[data-phase='countdown'] { background: var(--hint-bg); }
+.battle-layout { display: grid; gap: 16px; grid-template-columns: 1fr; }
+@media (min-width: 900px) { .battle-layout { grid-template-columns: 1fr 280px; align-items: start; } }
+.battle-feedback { min-height: 1.4em; margin: 4px 0 8px; font-weight: 600; }
+.battle-feedback.ok { color: var(--ok); }
+.battle-feedback.bad { color: var(--bad); }
+.scoreboard, .standings { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+.score-row { padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); display: grid; gap: 4px; }
+.score-row.you, .standings li.you { border-color: var(--accent); }
+.score-row.gone { opacity: 0.6; }
+.score-head { display: flex; justify-content: space-between; gap: 8px; }
+.score { font-variant-numeric: tabular-nums; font-weight: 700; }
+.bar { height: 6px; border-radius: 999px; background: var(--border); overflow: hidden; }
+.bar-fill { display: block; height: 100%; background: var(--accent); }
+.standings li { padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
+.battle-result { margin-top: 20px; }

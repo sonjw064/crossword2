@@ -41,6 +41,12 @@ public class RoomController {
 		return rooms.info(code, Owner.fromJwt(jwt));
 	}
 
+	/** 끝난 경기의 순위와 단어 카드. 그 경기의 참가자만 볼 수 있다. */
+	@GetMapping("/{code}/result")
+	public RoomDtos.MatchResultView result(@PathVariable String code, @AuthenticationPrincipal Jwt jwt) {
+		return rooms.result(code, Owner.fromJwt(jwt));
+	}
+
 	static String nickname(Jwt jwt) {
 		String nickname = jwt.getClaimAsString("nickname");
 		return nickname == null || nickname.isBlank() ? "player" : nickname;

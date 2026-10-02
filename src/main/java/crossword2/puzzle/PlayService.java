@@ -44,9 +44,12 @@ public class PlayService {
 	private final AccountLock accountLock;
 	private final ApplicationEventPublisher events;
 	private final Clock clock;
+	private final PlayRestrictions restrictions;
 
 	public PlayService(PuzzleRepository puzzleRepository, PlaySessionRepository sessionRepository,
-			WordRepository wordRepository, AccountLock accountLock, ApplicationEventPublisher events, Clock clock) {
+			WordRepository wordRepository, AccountLock accountLock, ApplicationEventPublisher events, Clock clock,
+			PlayRestrictions restrictions) {
+		this.restrictions = restrictions;
 		this.puzzleRepository = puzzleRepository;
 		this.sessionRepository = sessionRepository;
 		this.wordRepository = wordRepository;
@@ -61,6 +64,7 @@ public class PlayService {
 
 	/** 소유자가 있으면 계정을 먼저 잠그고 쓸 수 있는 계정인지 확인한 뒤 세션을 만든다(게스트 이전과 경쟁해도 고아 세션이 생기지 않는다). */
 	public StartResponse start(Long puzzleId, Owner caller) {
+		restrictions.requireSoloPlayAllowed(caller);
 		if (caller != null) {
 			accountLock.lockActive(caller);
 		}
@@ -70,6 +74,7 @@ public class PlayService {
 	}
 
 	public CheckResponse check(Long puzzleId, String sessionHeader, CheckRequest request, Owner caller) {
+		restrictions.requireSoloPlayAllowed(caller);
 		Play play = loadActive(puzzleId, sessionHeader, caller);
 		PlaySession session = play.session();
 
@@ -111,6 +116,7 @@ public class PlayService {
 	}
 
 	public HintResponse hint(Long puzzleId, String sessionHeader, Long entryId, Owner caller) {
+		restrictions.requireSoloPlayAllowed(caller);
 		Play play = loadActive(puzzleId, sessionHeader, caller);
 		PuzzleEntry entry = entryOf(play, entryId);
 		if (!play.session().getSolvedEntryIds().contains(entry.getId())) {
@@ -121,6 +127,7 @@ public class PlayService {
 	}
 
 	public DefinitionHintResponse definitionHint(Long puzzleId, String sessionHeader, Long entryId, Owner caller) {
+		restrictions.requireSoloPlayAllowed(caller);
 		Play play = loadActive(puzzleId, sessionHeader, caller);
 		PuzzleEntry entry = entryOf(play, entryId);
 		String definition = entry.getWord().getDefinition();
@@ -135,6 +142,7 @@ public class PlayService {
 
 	/** 정답 보기(포기): 세션을 끝내고 모든 정답과 단어 카드를 돌려준다. */
 	public RevealResponse reveal(Long puzzleId, String sessionHeader, Owner caller) {
+		restrictions.requireSoloPlayAllowed(caller);
 		Play play = loadActive(puzzleId, sessionHeader, caller);
 		PlaySession session = play.session();
 		finish(play, PlayStatus.GAVE_UP);
@@ -167,6 +175,7 @@ public class PlayService {
 	/** 이 세션에서 맞혔거나 공개된 단어만 카드를 볼 수 있다. */
 	@Transactional(readOnly = true)
 	public WordCard wordCard(Long wordId, String sessionHeader, Owner caller) {
+		restrictions.requireSoloPlayAllowed(caller);
 		PlaySession session = findSession(sessionHeader, false, caller);
 		Word word = wordRepository.findById(wordId)
 				.orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "WORD_NOT_FOUND", "word not found"));
