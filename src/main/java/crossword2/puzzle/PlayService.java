@@ -15,6 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import crossword2.auth.Owner;
 import crossword2.common.ApiException;
 import crossword2.puzzle.PuzzleDtos.AnswerItem;
 import crossword2.puzzle.PuzzleDtos.AnswerStatus;
@@ -52,14 +53,14 @@ public class PlayService {
 	private record Play(PlaySession session, Puzzle puzzle, Map<Long, PuzzleEntry> entries) {
 	}
 
-	public StartResponse start(Long puzzleId) {
+	public StartResponse start(Long puzzleId, Owner caller) {
 		Puzzle puzzle = puzzleRepository.findById(puzzleId).orElseThrow(PlayService::puzzleNotFound);
-		PlaySession session = sessionRepository.save(new PlaySession(puzzle, clock.instant()));
+		PlaySession session = sessionRepository.save(new PlaySession(puzzle, clock.instant(), caller));
 		return new StartResponse(session.getId(), puzzle.getId(), session.getStartedAt());
 	}
 
-	public CheckResponse check(Long puzzleId, String sessionHeader, CheckRequest request) {
-		Play play = loadActive(puzzleId, sessionHeader);
+	public CheckResponse check(Long puzzleId, String sessionHeader, CheckRequest request, Owner caller) {
+		Play play = loadActive(puzzleId, sessionHeader, caller);
 		PlaySession session = play.session();
 
 		Set<Long> seenEntries = new HashSet<>();
@@ -99,8 +100,8 @@ public class PlayService {
 		return new CheckResponse(results, completed, session.getWrongCount(), session.hintCount(), elapsed);
 	}
 
-	public HintResponse hint(Long puzzleId, String sessionHeader, Long entryId) {
-		Play play = loadActive(puzzleId, sessionHeader);
+	public HintResponse hint(Long puzzleId, String sessionHeader, Long entryId, Owner caller) {
+		Play play = loadActive(puzzleId, sessionHeader, caller);
 		PuzzleEntry entry = entryOf(play, entryId);
 		if (!play.session().getSolvedEntryIds().contains(entry.getId())) {
 			play.session().addLetterHint(entry.getId());
@@ -109,8 +110,8 @@ public class PlayService {
 		return new HintResponse(entry.getId(), letter, play.session().hintCount());
 	}
 
-	public DefinitionHintResponse definitionHint(Long puzzleId, String sessionHeader, Long entryId) {
-		Play play = loadActive(puzzleId, sessionHeader);
+	public DefinitionHintResponse definitionHint(Long puzzleId, String sessionHeader, Long entryId, Owner caller) {
+		Play play = loadActive(puzzleId, sessionHeader, caller);
 		PuzzleEntry entry = entryOf(play, entryId);
 		String definition = entry.getWord().getDefinition();
 		if (definition == null || definition.isBlank()) {
@@ -123,8 +124,8 @@ public class PlayService {
 	}
 
 	/** 정답 보기(포기): 세션을 끝내고 모든 정답과 단어 카드를 돌려준다. */
-	public RevealResponse reveal(Long puzzleId, String sessionHeader) {
-		Play play = loadActive(puzzleId, sessionHeader);
+	public RevealResponse reveal(Long puzzleId, String sessionHeader, Owner caller) {
+		Play play = loadActive(puzzleId, sessionHeader, caller);
 		PlaySession session = play.session();
 		session.finish(PlayStatus.GAVE_UP, clock.instant());
 		List<RevealedEntry> entries = play.puzzle().getEntries().stream()
@@ -135,8 +136,8 @@ public class PlayService {
 
 	/** 이 세션에서 맞혔거나 공개된 단어만 카드를 볼 수 있다. */
 	@Transactional(readOnly = true)
-	public WordCard wordCard(Long wordId, String sessionHeader) {
-		PlaySession session = findSession(sessionHeader, false);
+	public WordCard wordCard(Long wordId, String sessionHeader, Owner caller) {
+		PlaySession session = findSession(sessionHeader, false, caller);
 		Word word = wordRepository.findById(wordId)
 				.orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "WORD_NOT_FOUND", "word not found"));
 		Puzzle puzzle = puzzleRepository.findWithEntriesById(session.getPuzzle().getId())
@@ -153,8 +154,8 @@ public class PlayService {
 	}
 
 	/** 상태를 바꾸는 요청용: 세션 행을 잠그고 읽어, 같은 세션의 동시 요청을 하나씩 처리한다. */
-	private Play loadActive(Long puzzleId, String sessionHeader) {
-		PlaySession session = findSession(sessionHeader, true);
+	private Play loadActive(Long puzzleId, String sessionHeader, Owner caller) {
+		PlaySession session = findSession(sessionHeader, true, caller);
 		if (!session.getPuzzle().getId().equals(puzzleId)) {
 			throw new ApiException(HttpStatus.BAD_REQUEST, "SESSION_MISMATCH", "session belongs to another puzzle");
 		}
@@ -167,7 +168,7 @@ public class PlayService {
 		return new Play(session, puzzle, entries);
 	}
 
-	private PlaySession findSession(String sessionHeader, boolean lock) {
+	private PlaySession findSession(String sessionHeader, boolean lock, Owner caller) {
 		if (sessionHeader == null || sessionHeader.isBlank()) {
 			throw new ApiException(HttpStatus.BAD_REQUEST, "MISSING_SESSION", "X-Play-Session header is required");
 		}
@@ -177,8 +178,12 @@ public class PlayService {
 		} catch (IllegalArgumentException e) {
 			throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_SESSION", "X-Play-Session is not a valid id");
 		}
-		return (lock ? sessionRepository.findForUpdate(id) : sessionRepository.findById(id))
+		PlaySession session = (lock ? sessionRepository.findForUpdate(id) : sessionRepository.findById(id))
 				.orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "SESSION_NOT_FOUND", "session not found"));
+		if (session.hasOwner() && !session.isOwnedBy(caller)) {
+			throw new ApiException(HttpStatus.FORBIDDEN, "SESSION_FORBIDDEN", "this session belongs to another user");
+		}
+		return session;
 	}
 
 	private static PuzzleEntry entryOf(Play play, Long entryId) {

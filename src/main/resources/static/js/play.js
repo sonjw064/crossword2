@@ -42,7 +42,8 @@ export async function mountPlay(root, puzzleId, ctx, handle) {
   const bannerEl = h('div', { class: 'banner', hidden: true });
 
   const cellEls = model.cells.map((row) => row.map(() => null));
-  const gridEl = h('div', { class: 'grid', style: `--size:${model.size}`, role: 'grid', 'aria-label': '십자말풀이 판' });
+  const gridEl = h('div', { class: 'grid', role: 'grid', 'aria-label': '십자말풀이 판' });
+  gridEl.style.setProperty('--size', model.size); // CSP: 인라인 style 속성 대신 CSSOM 사용
   for (let r = 0; r < model.size; r++) {
     for (let c = 0; c < model.size; c++) {
       const cell = model.cells[r][c];

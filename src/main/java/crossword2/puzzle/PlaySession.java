@@ -6,6 +6,8 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
+import crossword2.auth.Owner;
+import crossword2.auth.OwnerType;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
@@ -47,6 +49,14 @@ public class PlaySession {
 	@Column(nullable = false)
 	private int wrongCount;
 
+	/** 토큰 없이 시작한 익명 풀이는 null. 소유자가 있으면 그 사용자만 이 세션을 쓸 수 있다. */
+	@Enumerated(EnumType.STRING)
+	@Column(length = 20)
+	private OwnerType ownerType;
+
+	@Column(length = 36)
+	private String ownerId;
+
 	@ElementCollection
 	@CollectionTable(name = "play_session_solved", joinColumns = @JoinColumn(name = "session_id"))
 	@Column(name = "entry_id")
@@ -65,10 +75,22 @@ public class PlaySession {
 	protected PlaySession() {
 	}
 
-	public PlaySession(Puzzle puzzle, Instant startedAt) {
+	public PlaySession(Puzzle puzzle, Instant startedAt, Owner owner) {
 		this.id = UUID.randomUUID();
 		this.puzzle = puzzle;
 		this.startedAt = startedAt;
+		if (owner != null) {
+			this.ownerType = owner.type();
+			this.ownerId = owner.id();
+		}
+	}
+
+	public boolean hasOwner() {
+		return ownerType != null;
+	}
+
+	public boolean isOwnedBy(Owner caller) {
+		return caller != null && caller.type() == ownerType && caller.id().equals(ownerId);
 	}
 
 	public boolean isActive() {
