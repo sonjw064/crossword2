@@ -1,0 +1,1262 @@
+[
+ {
+  "english": "cat",
+  "korean": "고양이",
+  "partOfSpeech": "NOUN",
+  "definition": "a small furry pet that purrs",
+  "difficulty": "EASY",
+  "topic": "animals",
+  "example": "The cat sleeps on the sofa."
+ },
+ {
+  "english": "dog",
+  "korean": "개",
+  "partOfSpeech": "NOUN",
+  "definition": "a pet that barks and is loyal to people",
+  "difficulty": "EASY",
+  "topic": "animals",
+  "example": "My dog loves walks."
+ },
+ {
+  "english": "bird",
+  "korean": "새",
+  "partOfSpeech": "NOUN",
+  "definition": "an animal with wings and feathers",
+  "difficulty": "EASY",
+  "topic": "animals",
+  "example": "A bird sang in the tree."
+ },
+ {
+  "english": "fish",
+  "korean": "물고기",
+  "partOfSpeech": "NOUN",
+  "definition": "an animal that lives and swims in water",
+  "difficulty": "EASY",
+  "topic": "animals",
+  "example": "We saw a fish in the pond."
+ },
+ {
+  "english": "horse",
+  "korean": "말",
+  "partOfSpeech": "NOUN",
+  "definition": "a large animal that people ride",
+  "difficulty": "EASY",
+  "topic": "animals",
+  "example": "She rides a horse every week."
+ },
+ {
+  "english": "rabbit",
+  "korean": "토끼",
+  "partOfSpeech": "NOUN",
+  "definition": "a small animal with long ears that hops",
+  "difficulty": "EASY",
+  "topic": "animals",
+  "example": "The rabbit ate a carrot."
+ },
+ {
+  "english": "tiger",
+  "korean": "호랑이",
+  "partOfSpeech": "NOUN",
+  "definition": "a big wild cat with stripes",
+  "difficulty": "EASY",
+  "topic": "animals",
+  "example": "The tiger walked slowly."
+ },
+ {
+  "english": "lion",
+  "korean": "사자",
+  "partOfSpeech": "NOUN",
+  "definition": "a big wild cat; the male has a mane",
+  "difficulty": "EASY",
+  "topic": "animals",
+  "example": "The lion roared loudly."
+ },
+ {
+  "english": "monkey",
+  "korean": "원숭이",
+  "partOfSpeech": "NOUN",
+  "definition": "a clever animal that climbs trees",
+  "difficulty": "EASY",
+  "topic": "animals",
+  "example": "The monkey ate a banana."
+ },
+ {
+  "english": "bat",
+  "korean": "박쥐",
+  "partOfSpeech": "NOUN",
+  "definition": "a flying animal that is active at night",
+  "difficulty": "EASY",
+  "topic": "animals",
+  "example": "A bat flew out of the cave."
+ },
+ {
+  "english": "elephant",
+  "korean": "코끼리",
+  "partOfSpeech": "NOUN",
+  "definition": "a huge gray animal with a long trunk",
+  "difficulty": "MEDIUM",
+  "topic": "animals",
+  "example": "An elephant drank at the river."
+ },
+ {
+  "english": "giraffe",
+  "korean": "기린",
+  "partOfSpeech": "NOUN",
+  "definition": "a very tall animal with a long neck",
+  "difficulty": "MEDIUM",
+  "topic": "animals",
+  "example": "The giraffe reached the leaves."
+ },
+ {
+  "english": "turtle",
+  "korean": "거북이",
+  "partOfSpeech": "NOUN",
+  "definition": "a slow animal with a hard shell",
+  "difficulty": "MEDIUM",
+  "topic": "animals",
+  "example": "The turtle hid in its shell."
+ },
+ {
+  "english": "dolphin",
+  "korean": "돌고래",
+  "partOfSpeech": "NOUN",
+  "definition": "a smart sea animal that jumps from the water",
+  "difficulty": "MEDIUM",
+  "topic": "animals",
+  "example": "A dolphin jumped over the wave."
+ },
+ {
+  "english": "penguin",
+  "korean": "펭귄",
+  "partOfSpeech": "NOUN",
+  "definition": "a black and white bird that swims but cannot fly",
+  "difficulty": "MEDIUM",
+  "topic": "animals",
+  "example": "The penguin slid on the ice."
+ },
+ {
+  "english": "butterfly",
+  "korean": "나비",
+  "partOfSpeech": "NOUN",
+  "definition": "an insect with colorful wings",
+  "difficulty": "MEDIUM",
+  "topic": "animals",
+  "example": "A butterfly landed on a flower."
+ },
+ {
+  "english": "squirrel",
+  "korean": "다람쥐",
+  "partOfSpeech": "NOUN",
+  "definition": "a small animal with a bushy tail that collects nuts",
+  "difficulty": "MEDIUM",
+  "topic": "animals",
+  "example": "The squirrel climbed the oak."
+ },
+ {
+  "english": "kangaroo",
+  "korean": "캥거루",
+  "partOfSpeech": "NOUN",
+  "definition": "an animal that hops and carries its baby in a pouch",
+  "difficulty": "MEDIUM",
+  "topic": "animals",
+  "example": "The kangaroo jumped across the field."
+ },
+ {
+  "english": "crocodile",
+  "korean": "악어",
+  "partOfSpeech": "NOUN",
+  "definition": "a large reptile with strong jaws that lives in rivers",
+  "difficulty": "HARD",
+  "topic": "animals",
+  "example": "A crocodile rested on the bank."
+ },
+ {
+  "english": "hedgehog",
+  "korean": "고슴도치",
+  "partOfSpeech": "NOUN",
+  "definition": "a small animal covered in sharp spines",
+  "difficulty": "HARD",
+  "topic": "animals",
+  "example": "The hedgehog rolled into a ball."
+ },
+ {
+  "english": "octopus",
+  "korean": "문어",
+  "partOfSpeech": "NOUN",
+  "definition": "a sea animal with eight arms",
+  "difficulty": "HARD",
+  "topic": "animals",
+  "example": "The octopus changed its color."
+ },
+ {
+  "english": "ostrich",
+  "korean": "타조",
+  "partOfSpeech": "NOUN",
+  "definition": "a huge bird that runs fast but cannot fly",
+  "difficulty": "HARD",
+  "topic": "animals",
+  "example": "An ostrich ran across the plain."
+ },
+ {
+  "english": "peacock",
+  "korean": "공작",
+  "partOfSpeech": "NOUN",
+  "definition": "a bird with beautiful, large tail feathers",
+  "difficulty": "HARD",
+  "topic": "animals",
+  "example": "The peacock spread its tail."
+ },
+ {
+  "english": "cheetah",
+  "korean": "치타",
+  "partOfSpeech": "NOUN",
+  "definition": "the fastest land animal, a spotted wild cat",
+  "difficulty": "HARD",
+  "topic": "animals",
+  "example": "A cheetah chased the deer."
+ },
+ {
+  "english": "apple",
+  "korean": "사과",
+  "partOfSpeech": "NOUN",
+  "definition": "a round fruit that is red, green, or yellow",
+  "difficulty": "EASY",
+  "topic": "food",
+  "example": "I ate an apple for lunch."
+ },
+ {
+  "english": "bread",
+  "korean": "빵",
+  "partOfSpeech": "NOUN",
+  "definition": "a food made from flour and baked",
+  "difficulty": "EASY",
+  "topic": "food",
+  "example": "We bought fresh bread."
+ },
+ {
+  "english": "milk",
+  "korean": "우유",
+  "partOfSpeech": "NOUN",
+  "definition": "a white drink that comes from cows",
+  "difficulty": "EASY",
+  "topic": "food",
+  "example": "She drinks milk every morning."
+ },
+ {
+  "english": "rice",
+  "korean": "쌀, 밥",
+  "partOfSpeech": "NOUN",
+  "definition": "small white grains that are cooked and eaten",
+  "difficulty": "EASY",
+  "topic": "food",
+  "example": "We eat rice with soup."
+ },
+ {
+  "english": "egg",
+  "korean": "달걀",
+  "partOfSpeech": "NOUN",
+  "definition": "an oval food laid by a hen",
+  "difficulty": "EASY",
+  "topic": "food",
+  "example": "He boiled an egg."
+ },
+ {
+  "english": "cake",
+  "korean": "케이크",
+  "partOfSpeech": "NOUN",
+  "definition": "a sweet baked food for birthdays",
+  "difficulty": "EASY",
+  "topic": "food",
+  "example": "We shared the birthday cake."
+ },
+ {
+  "english": "banana",
+  "korean": "바나나",
+  "partOfSpeech": "NOUN",
+  "definition": "a long yellow fruit with a soft inside",
+  "difficulty": "EASY",
+  "topic": "food",
+  "example": "The monkey peeled a banana."
+ },
+ {
+  "english": "cheese",
+  "korean": "치즈",
+  "partOfSpeech": "NOUN",
+  "definition": "a food made from milk, often yellow",
+  "difficulty": "EASY",
+  "topic": "food",
+  "example": "I like cheese on my pizza."
+ },
+ {
+  "english": "tomato",
+  "korean": "토마토",
+  "partOfSpeech": "NOUN",
+  "definition": "a round red fruit often used in salads",
+  "difficulty": "EASY",
+  "topic": "food",
+  "example": "She sliced a tomato."
+ },
+ {
+  "english": "potato",
+  "korean": "감자",
+  "partOfSpeech": "NOUN",
+  "definition": "a round vegetable that grows underground",
+  "difficulty": "EASY",
+  "topic": "food",
+  "example": "We fried a potato."
+ },
+ {
+  "english": "orange",
+  "korean": "오렌지",
+  "partOfSpeech": "NOUN",
+  "definition": "a round citrus fruit with a thick peel",
+  "difficulty": "EASY",
+  "topic": "food",
+  "example": "He peeled an orange."
+ },
+ {
+  "english": "carrot",
+  "korean": "당근",
+  "partOfSpeech": "NOUN",
+  "definition": "a long orange vegetable",
+  "difficulty": "EASY",
+  "topic": "food",
+  "example": "Rabbits love a carrot."
+ },
+ {
+  "english": "honey",
+  "korean": "꿀",
+  "partOfSpeech": "NOUN",
+  "definition": "a sweet food made by bees",
+  "difficulty": "EASY",
+  "topic": "food",
+  "example": "I put honey in my tea."
+ },
+ {
+  "english": "noodle",
+  "korean": "국수",
+  "partOfSpeech": "NOUN",
+  "definition": "a long thin food made from flour",
+  "difficulty": "MEDIUM",
+  "topic": "food",
+  "example": "I ate a bowl of noodle soup."
+ },
+ {
+  "english": "sandwich",
+  "korean": "샌드위치",
+  "partOfSpeech": "NOUN",
+  "definition": "two slices of bread with food in between",
+  "difficulty": "MEDIUM",
+  "topic": "food",
+  "example": "She made a sandwich for lunch."
+ },
+ {
+  "english": "chicken",
+  "korean": "닭고기",
+  "partOfSpeech": "NOUN",
+  "definition": "meat from a hen, or the bird itself",
+  "difficulty": "MEDIUM",
+  "topic": "food",
+  "example": "We had chicken for dinner."
+ },
+ {
+  "english": "pumpkin",
+  "korean": "호박",
+  "partOfSpeech": "NOUN",
+  "definition": "a large round orange vegetable",
+  "difficulty": "MEDIUM",
+  "topic": "food",
+  "example": "They carved a pumpkin."
+ },
+ {
+  "english": "cucumber",
+  "korean": "오이",
+  "partOfSpeech": "NOUN",
+  "definition": "a long green vegetable eaten fresh",
+  "difficulty": "MEDIUM",
+  "topic": "food",
+  "example": "He added cucumber to the salad."
+ },
+ {
+  "english": "pancake",
+  "korean": "팬케이크",
+  "partOfSpeech": "NOUN",
+  "definition": "a flat round cake cooked in a pan",
+  "difficulty": "MEDIUM",
+  "topic": "food",
+  "example": "We ate a pancake with syrup."
+ },
+ {
+  "english": "strawberry",
+  "korean": "딸기",
+  "partOfSpeech": "NOUN",
+  "definition": "a small red fruit with tiny seeds on its skin",
+  "difficulty": "MEDIUM",
+  "topic": "food",
+  "example": "The strawberry tasted sweet."
+ },
+ {
+  "english": "broccoli",
+  "korean": "브로콜리",
+  "partOfSpeech": "NOUN",
+  "definition": "a green vegetable shaped like a small tree",
+  "difficulty": "HARD",
+  "topic": "food",
+  "example": "Children often dislike broccoli."
+ },
+ {
+  "english": "cabbage",
+  "korean": "양배추",
+  "partOfSpeech": "NOUN",
+  "definition": "a large round vegetable with many leaves",
+  "difficulty": "HARD",
+  "topic": "food",
+  "example": "She chopped the cabbage."
+ },
+ {
+  "english": "vinegar",
+  "korean": "식초",
+  "partOfSpeech": "NOUN",
+  "definition": "a sour liquid used in cooking",
+  "difficulty": "HARD",
+  "topic": "food",
+  "example": "Add a little vinegar to the salad."
+ },
+ {
+  "english": "spinach",
+  "korean": "시금치",
+  "partOfSpeech": "NOUN",
+  "definition": "a dark green leafy vegetable",
+  "difficulty": "HARD",
+  "topic": "food",
+  "example": "Spinach is full of iron."
+ },
+ {
+  "english": "book",
+  "korean": "책",
+  "partOfSpeech": "NOUN",
+  "definition": "pages with writing that you read",
+  "difficulty": "EASY",
+  "topic": "school",
+  "example": "I read a book at night."
+ },
+ {
+  "english": "desk",
+  "korean": "책상",
+  "partOfSpeech": "NOUN",
+  "definition": "a table where you read or write",
+  "difficulty": "EASY",
+  "topic": "school",
+  "example": "My desk is by the window."
+ },
+ {
+  "english": "pencil",
+  "korean": "연필",
+  "partOfSpeech": "NOUN",
+  "definition": "a thin tool for writing or drawing",
+  "difficulty": "EASY",
+  "topic": "school",
+  "example": "Please sharpen your pencil."
+ },
+ {
+  "english": "teacher",
+  "korean": "선생님",
+  "partOfSpeech": "NOUN",
+  "definition": "a person who helps students learn",
+  "difficulty": "EASY",
+  "topic": "school",
+  "example": "The teacher smiled at us."
+ },
+ {
+  "english": "student",
+  "korean": "학생",
+  "partOfSpeech": "NOUN",
+  "definition": "a person who studies at a school",
+  "difficulty": "EASY",
+  "topic": "school",
+  "example": "Every student has a bag."
+ },
+ {
+  "english": "class",
+  "korean": "수업, 학급",
+  "partOfSpeech": "NOUN",
+  "definition": "a group of students who learn together",
+  "difficulty": "EASY",
+  "topic": "school",
+  "example": "Our class starts at nine."
+ },
+ {
+  "english": "learn",
+  "korean": "배우다",
+  "partOfSpeech": "VERB",
+  "definition": "to get new knowledge or skill",
+  "difficulty": "EASY",
+  "topic": "school",
+  "example": "Children learn quickly."
+ },
+ {
+  "english": "lesson",
+  "korean": "수업, 교훈",
+  "partOfSpeech": "NOUN",
+  "definition": "a period of time when you learn something",
+  "difficulty": "MEDIUM",
+  "topic": "school",
+  "example": "Today's lesson was about maps."
+ },
+ {
+  "english": "homework",
+  "korean": "숙제",
+  "partOfSpeech": "NOUN",
+  "definition": "school work you do at home",
+  "difficulty": "MEDIUM",
+  "topic": "school",
+  "example": "I finished my homework early."
+ },
+ {
+  "english": "notebook",
+  "korean": "공책",
+  "partOfSpeech": "NOUN",
+  "definition": "a book of blank pages for writing notes",
+  "difficulty": "MEDIUM",
+  "topic": "school",
+  "example": "Write it in your notebook."
+ },
+ {
+  "english": "eraser",
+  "korean": "지우개",
+  "partOfSpeech": "NOUN",
+  "definition": "a small tool that removes pencil marks",
+  "difficulty": "MEDIUM",
+  "topic": "school",
+  "example": "I need an eraser."
+ },
+ {
+  "english": "library",
+  "korean": "도서관",
+  "partOfSpeech": "NOUN",
+  "definition": "a place where you can borrow books",
+  "difficulty": "MEDIUM",
+  "topic": "school",
+  "example": "We study in the library."
+ },
+ {
+  "english": "history",
+  "korean": "역사",
+  "partOfSpeech": "NOUN",
+  "definition": "the study of things that happened in the past",
+  "difficulty": "MEDIUM",
+  "topic": "school",
+  "example": "I like history class."
+ },
+ {
+  "english": "science",
+  "korean": "과학",
+  "partOfSpeech": "NOUN",
+  "definition": "the study of nature and how things work",
+  "difficulty": "MEDIUM",
+  "topic": "school",
+  "example": "Science is my favorite subject."
+ },
+ {
+  "english": "subject",
+  "korean": "과목",
+  "partOfSpeech": "NOUN",
+  "definition": "an area of study such as math or art",
+  "difficulty": "MEDIUM",
+  "topic": "school",
+  "example": "Which subject do you like?"
+ },
+ {
+  "english": "exam",
+  "korean": "시험",
+  "partOfSpeech": "NOUN",
+  "definition": "a test of what you have learned",
+  "difficulty": "MEDIUM",
+  "topic": "school",
+  "example": "She studied hard for the exam."
+ },
+ {
+  "english": "calendar",
+  "korean": "달력",
+  "partOfSpeech": "NOUN",
+  "definition": "a chart that shows days, weeks, and months",
+  "difficulty": "MEDIUM",
+  "topic": "school",
+  "example": "Mark the date on the calendar."
+ },
+ {
+  "english": "backpack",
+  "korean": "배낭, 책가방",
+  "partOfSpeech": "NOUN",
+  "definition": "a bag carried on your back",
+  "difficulty": "MEDIUM",
+  "topic": "school",
+  "example": "My backpack is heavy."
+ },
+ {
+  "english": "grammar",
+  "korean": "문법",
+  "partOfSpeech": "NOUN",
+  "definition": "the rules for how words are put together",
+  "difficulty": "HARD",
+  "topic": "school",
+  "example": "English grammar can be tricky."
+ },
+ {
+  "english": "vocabulary",
+  "korean": "어휘",
+  "partOfSpeech": "NOUN",
+  "definition": "all the words that a person knows",
+  "difficulty": "HARD",
+  "topic": "school",
+  "example": "Reading improves your vocabulary."
+ },
+ {
+  "english": "dictionary",
+  "korean": "사전",
+  "partOfSpeech": "NOUN",
+  "definition": "a book that explains the meaning of words",
+  "difficulty": "HARD",
+  "topic": "school",
+  "example": "Look it up in the dictionary."
+ },
+ {
+  "english": "mathematics",
+  "korean": "수학",
+  "partOfSpeech": "NOUN",
+  "definition": "the study of numbers and shapes",
+  "difficulty": "HARD",
+  "topic": "school",
+  "example": "Mathematics needs practice."
+ },
+ {
+  "english": "scissors",
+  "korean": "가위",
+  "partOfSpeech": "NOUN",
+  "definition": "a tool with two blades for cutting paper",
+  "difficulty": "HARD",
+  "topic": "school",
+  "example": "Cut the paper with scissors."
+ },
+ {
+  "english": "graduate",
+  "korean": "졸업하다",
+  "partOfSpeech": "VERB",
+  "definition": "to finish your studies at a school",
+  "difficulty": "HARD",
+  "topic": "school",
+  "example": "She will graduate in June."
+ },
+ {
+  "english": "sun",
+  "korean": "태양",
+  "partOfSpeech": "NOUN",
+  "definition": "the star that gives us light and heat",
+  "difficulty": "EASY",
+  "topic": "nature",
+  "example": "The sun is bright today."
+ },
+ {
+  "english": "moon",
+  "korean": "달",
+  "partOfSpeech": "NOUN",
+  "definition": "the bright object we see in the night sky",
+  "difficulty": "EASY",
+  "topic": "nature",
+  "example": "The moon is full tonight."
+ },
+ {
+  "english": "star",
+  "korean": "별",
+  "partOfSpeech": "NOUN",
+  "definition": "a bright point of light in the night sky",
+  "difficulty": "EASY",
+  "topic": "nature",
+  "example": "I made a wish on a star."
+ },
+ {
+  "english": "tree",
+  "korean": "나무",
+  "partOfSpeech": "NOUN",
+  "definition": "a tall plant with a trunk and branches",
+  "difficulty": "EASY",
+  "topic": "nature",
+  "example": "A bird sat in the tree."
+ },
+ {
+  "english": "flower",
+  "korean": "꽃",
+  "partOfSpeech": "NOUN",
+  "definition": "the colorful part of a plant",
+  "difficulty": "EASY",
+  "topic": "nature",
+  "example": "She picked a flower."
+ },
+ {
+  "english": "river",
+  "korean": "강",
+  "partOfSpeech": "NOUN",
+  "definition": "a long stream of water that flows to the sea",
+  "difficulty": "EASY",
+  "topic": "nature",
+  "example": "The river is wide here."
+ },
+ {
+  "english": "cloud",
+  "korean": "구름",
+  "partOfSpeech": "NOUN",
+  "definition": "a white or gray mass floating in the sky",
+  "difficulty": "EASY",
+  "topic": "nature",
+  "example": "A dark cloud covered the sun."
+ },
+ {
+  "english": "snow",
+  "korean": "눈",
+  "partOfSpeech": "NOUN",
+  "definition": "soft white flakes that fall in cold weather",
+  "difficulty": "EASY",
+  "topic": "nature",
+  "example": "Snow covered the ground."
+ },
+ {
+  "english": "wind",
+  "korean": "바람",
+  "partOfSpeech": "NOUN",
+  "definition": "air that moves outdoors",
+  "difficulty": "EASY",
+  "topic": "nature",
+  "example": "The wind is strong today."
+ },
+ {
+  "english": "grass",
+  "korean": "풀",
+  "partOfSpeech": "NOUN",
+  "definition": "a green plant that covers fields and lawns",
+  "difficulty": "EASY",
+  "topic": "nature",
+  "example": "Sheep eat grass."
+ },
+ {
+  "english": "mountain",
+  "korean": "산",
+  "partOfSpeech": "NOUN",
+  "definition": "a very high piece of land",
+  "difficulty": "MEDIUM",
+  "topic": "nature",
+  "example": "We climbed the mountain."
+ },
+ {
+  "english": "forest",
+  "korean": "숲",
+  "partOfSpeech": "NOUN",
+  "definition": "a large area full of trees",
+  "difficulty": "MEDIUM",
+  "topic": "nature",
+  "example": "We walked through the forest."
+ },
+ {
+  "english": "ocean",
+  "korean": "바다, 대양",
+  "partOfSpeech": "NOUN",
+  "definition": "a very large area of salt water",
+  "difficulty": "MEDIUM",
+  "topic": "nature",
+  "example": "The ocean is deep."
+ },
+ {
+  "english": "island",
+  "korean": "섬",
+  "partOfSpeech": "NOUN",
+  "definition": "land with water all around it",
+  "difficulty": "MEDIUM",
+  "topic": "nature",
+  "example": "They live on a small island."
+ },
+ {
+  "english": "rainbow",
+  "korean": "무지개",
+  "partOfSpeech": "NOUN",
+  "definition": "a colorful arc in the sky after rain",
+  "difficulty": "MEDIUM",
+  "topic": "nature",
+  "example": "A rainbow appeared after the storm."
+ },
+ {
+  "english": "thunder",
+  "korean": "천둥",
+  "partOfSpeech": "NOUN",
+  "definition": "the loud sound that follows lightning",
+  "difficulty": "MEDIUM",
+  "topic": "nature",
+  "example": "Thunder shook the windows."
+ },
+ {
+  "english": "storm",
+  "korean": "폭풍",
+  "partOfSpeech": "NOUN",
+  "definition": "very bad weather with strong wind and rain",
+  "difficulty": "MEDIUM",
+  "topic": "nature",
+  "example": "A storm is coming."
+ },
+ {
+  "english": "desert",
+  "korean": "사막",
+  "partOfSpeech": "NOUN",
+  "definition": "a very dry place with little rain",
+  "difficulty": "MEDIUM",
+  "topic": "nature",
+  "example": "The desert is hot by day."
+ },
+ {
+  "english": "valley",
+  "korean": "계곡",
+  "partOfSpeech": "NOUN",
+  "definition": "low land between hills or mountains",
+  "difficulty": "MEDIUM",
+  "topic": "nature",
+  "example": "A river runs through the valley."
+ },
+ {
+  "english": "lightning",
+  "korean": "번개",
+  "partOfSpeech": "NOUN",
+  "definition": "a bright flash of light in the sky during a storm",
+  "difficulty": "HARD",
+  "topic": "nature",
+  "example": "Lightning lit up the sky."
+ },
+ {
+  "english": "volcano",
+  "korean": "화산",
+  "partOfSpeech": "NOUN",
+  "definition": "a mountain that can throw out hot melted rock",
+  "difficulty": "HARD",
+  "topic": "nature",
+  "example": "The volcano erupted."
+ },
+ {
+  "english": "waterfall",
+  "korean": "폭포",
+  "partOfSpeech": "NOUN",
+  "definition": "water that falls from a high place",
+  "difficulty": "HARD",
+  "topic": "nature",
+  "example": "We swam below the waterfall."
+ },
+ {
+  "english": "earthquake",
+  "korean": "지진",
+  "partOfSpeech": "NOUN",
+  "definition": "a sudden strong shaking of the ground",
+  "difficulty": "HARD",
+  "topic": "nature",
+  "example": "The earthquake was strong."
+ },
+ {
+  "english": "sunrise",
+  "korean": "일출",
+  "partOfSpeech": "NOUN",
+  "definition": "the time when the sun first appears in the morning",
+  "difficulty": "HARD",
+  "topic": "nature",
+  "example": "We watched the sunrise."
+ },
+ {
+  "english": "house",
+  "korean": "집",
+  "partOfSpeech": "NOUN",
+  "definition": "a building where people live",
+  "difficulty": "EASY",
+  "topic": "home",
+  "example": "Their house has a red door."
+ },
+ {
+  "english": "door",
+  "korean": "문",
+  "partOfSpeech": "NOUN",
+  "definition": "something you open to enter a room",
+  "difficulty": "EASY",
+  "topic": "home",
+  "example": "Please close the door."
+ },
+ {
+  "english": "window",
+  "korean": "창문",
+  "partOfSpeech": "NOUN",
+  "definition": "a glass opening in a wall",
+  "difficulty": "EASY",
+  "topic": "home",
+  "example": "Open the window, please."
+ },
+ {
+  "english": "table",
+  "korean": "탁자",
+  "partOfSpeech": "NOUN",
+  "definition": "furniture with a flat top and legs",
+  "difficulty": "EASY",
+  "topic": "home",
+  "example": "Put the plates on the table."
+ },
+ {
+  "english": "chair",
+  "korean": "의자",
+  "partOfSpeech": "NOUN",
+  "definition": "a seat for one person",
+  "difficulty": "EASY",
+  "topic": "home",
+  "example": "Sit on this chair."
+ },
+ {
+  "english": "bed",
+  "korean": "침대",
+  "partOfSpeech": "NOUN",
+  "definition": "furniture you sleep on",
+  "difficulty": "EASY",
+  "topic": "home",
+  "example": "He went to bed early."
+ },
+ {
+  "english": "lamp",
+  "korean": "램프",
+  "partOfSpeech": "NOUN",
+  "definition": "a light that stands on a table or floor",
+  "difficulty": "EASY",
+  "topic": "home",
+  "example": "Turn on the lamp."
+ },
+ {
+  "english": "clock",
+  "korean": "시계",
+  "partOfSpeech": "NOUN",
+  "definition": "a machine that shows the time",
+  "difficulty": "EASY",
+  "topic": "home",
+  "example": "The clock on the wall is fast."
+ },
+ {
+  "english": "sofa",
+  "korean": "소파",
+  "partOfSpeech": "NOUN",
+  "definition": "a long soft seat for several people",
+  "difficulty": "EASY",
+  "topic": "home",
+  "example": "We sat on the sofa."
+ },
+ {
+  "english": "roof",
+  "korean": "지붕",
+  "partOfSpeech": "NOUN",
+  "definition": "the top covering of a building",
+  "difficulty": "EASY",
+  "topic": "home",
+  "example": "Snow fell on the roof."
+ },
+ {
+  "english": "wall",
+  "korean": "벽",
+  "partOfSpeech": "NOUN",
+  "definition": "a side of a room or a building",
+  "difficulty": "EASY",
+  "topic": "home",
+  "example": "A picture hangs on the wall."
+ },
+ {
+  "english": "floor",
+  "korean": "바닥",
+  "partOfSpeech": "NOUN",
+  "definition": "the surface you walk on inside a room",
+  "difficulty": "EASY",
+  "topic": "home",
+  "example": "Please sweep the floor."
+ },
+ {
+  "english": "kitchen",
+  "korean": "부엌",
+  "partOfSpeech": "NOUN",
+  "definition": "a room where food is cooked",
+  "difficulty": "MEDIUM",
+  "topic": "home",
+  "example": "Mom is in the kitchen."
+ },
+ {
+  "english": "bathroom",
+  "korean": "욕실",
+  "partOfSpeech": "NOUN",
+  "definition": "a room with a bath or shower",
+  "difficulty": "MEDIUM",
+  "topic": "home",
+  "example": "The bathroom is upstairs."
+ },
+ {
+  "english": "garden",
+  "korean": "정원",
+  "partOfSpeech": "NOUN",
+  "definition": "a place where flowers or vegetables grow",
+  "difficulty": "MEDIUM",
+  "topic": "home",
+  "example": "We planted roses in the garden."
+ },
+ {
+  "english": "garage",
+  "korean": "차고",
+  "partOfSpeech": "NOUN",
+  "definition": "a place to keep a car",
+  "difficulty": "MEDIUM",
+  "topic": "home",
+  "example": "The car is in the garage."
+ },
+ {
+  "english": "blanket",
+  "korean": "담요",
+  "partOfSpeech": "NOUN",
+  "definition": "a warm cover for a bed",
+  "difficulty": "MEDIUM",
+  "topic": "home",
+  "example": "She wrapped herself in a blanket."
+ },
+ {
+  "english": "pillow",
+  "korean": "베개",
+  "partOfSpeech": "NOUN",
+  "definition": "a soft cushion for your head",
+  "difficulty": "MEDIUM",
+  "topic": "home",
+  "example": "I need a softer pillow."
+ },
+ {
+  "english": "mirror",
+  "korean": "거울",
+  "partOfSpeech": "NOUN",
+  "definition": "a glass in which you can see yourself",
+  "difficulty": "MEDIUM",
+  "topic": "home",
+  "example": "She looked in the mirror."
+ },
+ {
+  "english": "curtain",
+  "korean": "커튼",
+  "partOfSpeech": "NOUN",
+  "definition": "cloth that hangs over a window",
+  "difficulty": "HARD",
+  "topic": "home",
+  "example": "Draw the curtain, please."
+ },
+ {
+  "english": "ceiling",
+  "korean": "천장",
+  "partOfSpeech": "NOUN",
+  "definition": "the top surface inside a room",
+  "difficulty": "HARD",
+  "topic": "home",
+  "example": "There is a lamp on the ceiling."
+ },
+ {
+  "english": "staircase",
+  "korean": "계단",
+  "partOfSpeech": "NOUN",
+  "definition": "a set of steps going up or down inside a building",
+  "difficulty": "HARD",
+  "topic": "home",
+  "example": "The staircase is very steep."
+ },
+ {
+  "english": "refrigerator",
+  "korean": "냉장고",
+  "partOfSpeech": "NOUN",
+  "definition": "a machine that keeps food cold",
+  "difficulty": "HARD",
+  "topic": "home",
+  "example": "Put the milk in the refrigerator."
+ },
+ {
+  "english": "television",
+  "korean": "텔레비전",
+  "partOfSpeech": "NOUN",
+  "definition": "a machine with a screen that shows programs",
+  "difficulty": "HARD",
+  "topic": "home",
+  "example": "We watched television together."
+ },
+ {
+  "english": "happy",
+  "korean": "행복한",
+  "partOfSpeech": "ADJECTIVE",
+  "definition": "feeling glad and pleased",
+  "difficulty": "EASY",
+  "topic": "feelings",
+  "example": "She was happy to see us."
+ },
+ {
+  "english": "sad",
+  "korean": "슬픈",
+  "partOfSpeech": "ADJECTIVE",
+  "definition": "feeling unhappy",
+  "difficulty": "EASY",
+  "topic": "feelings",
+  "example": "He felt sad after the movie."
+ },
+ {
+  "english": "angry",
+  "korean": "화난",
+  "partOfSpeech": "ADJECTIVE",
+  "definition": "feeling very upset at someone or something",
+  "difficulty": "EASY",
+  "topic": "feelings",
+  "example": "Dad was angry about the mess."
+ },
+ {
+  "english": "tired",
+  "korean": "피곤한",
+  "partOfSpeech": "ADJECTIVE",
+  "definition": "needing rest or sleep",
+  "difficulty": "EASY",
+  "topic": "feelings",
+  "example": "I am tired after school."
+ },
+ {
+  "english": "hungry",
+  "korean": "배고픈",
+  "partOfSpeech": "ADJECTIVE",
+  "definition": "wanting to eat",
+  "difficulty": "EASY",
+  "topic": "feelings",
+  "example": "The kids are hungry."
+ },
+ {
+  "english": "smile",
+  "korean": "미소 짓다",
+  "partOfSpeech": "VERB",
+  "definition": "to turn up the corners of your mouth when happy",
+  "difficulty": "EASY",
+  "topic": "feelings",
+  "example": "Please smile for the photo."
+ },
+ {
+  "english": "laugh",
+  "korean": "웃다",
+  "partOfSpeech": "VERB",
+  "definition": "to make sounds that show something is funny",
+  "difficulty": "EASY",
+  "topic": "feelings",
+  "example": "We laugh at his jokes."
+ },
+ {
+  "english": "cry",
+  "korean": "울다",
+  "partOfSpeech": "VERB",
+  "definition": "to have tears come from your eyes",
+  "difficulty": "EASY",
+  "topic": "feelings",
+  "example": "The baby began to cry."
+ },
+ {
+  "english": "scared",
+  "korean": "무서워하는",
+  "partOfSpeech": "ADJECTIVE",
+  "definition": "feeling afraid",
+  "difficulty": "MEDIUM",
+  "topic": "feelings",
+  "example": "She was scared of the dark."
+ },
+ {
+  "english": "excited",
+  "korean": "신이 난",
+  "partOfSpeech": "ADJECTIVE",
+  "definition": "very happy and full of energy",
+  "difficulty": "MEDIUM",
+  "topic": "feelings",
+  "example": "We were excited about the trip."
+ },
+ {
+  "english": "lonely",
+  "korean": "외로운",
+  "partOfSpeech": "ADJECTIVE",
+  "definition": "unhappy because you are alone",
+  "difficulty": "MEDIUM",
+  "topic": "feelings",
+  "example": "He felt lonely in the big city."
+ },
+ {
+  "english": "proud",
+  "korean": "자랑스러운",
+  "partOfSpeech": "ADJECTIVE",
+  "definition": "feeling pleased about what you or others did",
+  "difficulty": "MEDIUM",
+  "topic": "feelings",
+  "example": "Mom is proud of you."
+ },
+ {
+  "english": "nervous",
+  "korean": "긴장한",
+  "partOfSpeech": "ADJECTIVE",
+  "definition": "worried about something that will happen",
+  "difficulty": "MEDIUM",
+  "topic": "feelings",
+  "example": "I was nervous before the test."
+ },
+ {
+  "english": "hope",
+  "korean": "희망하다",
+  "partOfSpeech": "VERB",
+  "definition": "to want and expect something good",
+  "difficulty": "MEDIUM",
+  "topic": "feelings",
+  "example": "I hope it stays sunny."
+ },
+ {
+  "english": "worry",
+  "korean": "걱정하다",
+  "partOfSpeech": "VERB",
+  "definition": "to think about problems and feel uneasy",
+  "difficulty": "MEDIUM",
+  "topic": "feelings",
+  "example": "Do not worry about me."
+ },
+ {
+  "english": "surprise",
+  "korean": "놀라게 하다",
+  "partOfSpeech": "VERB",
+  "definition": "to cause someone to feel sudden wonder",
+  "difficulty": "MEDIUM",
+  "topic": "feelings",
+  "example": "The gift will surprise her."
+ },
+ {
+  "english": "jealous",
+  "korean": "질투하는",
+  "partOfSpeech": "ADJECTIVE",
+  "definition": "unhappy because you want what someone else has",
+  "difficulty": "HARD",
+  "topic": "feelings",
+  "example": "He was jealous of his brother."
+ },
+ {
+  "english": "grateful",
+  "korean": "감사하는",
+  "partOfSpeech": "ADJECTIVE",
+  "definition": "feeling thankful",
+  "difficulty": "HARD",
+  "topic": "feelings",
+  "example": "I am grateful for your help."
+ },
+ {
+  "english": "curious",
+  "korean": "호기심 많은",
+  "partOfSpeech": "ADJECTIVE",
+  "definition": "wanting to know or learn something",
+  "difficulty": "HARD",
+  "topic": "feelings",
+  "example": "The curious cat opened the box."
+ },
+ {
+  "english": "embarrassed",
+  "korean": "당황한",
+  "partOfSpeech": "ADJECTIVE",
+  "definition": "feeling shy or uncomfortable in front of others",
+  "difficulty": "HARD",
+  "topic": "feelings",
+  "example": "She felt embarrassed by her mistake."
+ }
+]
