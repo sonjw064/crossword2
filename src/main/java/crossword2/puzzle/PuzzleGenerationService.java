@@ -9,10 +9,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import crossword2.grid.GridGenerationException;
+import crossword2.grid.GridGenerationException.Reason;
 import crossword2.grid.GridGenerator;
 import crossword2.grid.GridLayout;
 import crossword2.grid.PlacedWord;
@@ -22,6 +24,7 @@ import crossword2.word.WordRepository;
 
 /**
  * 단어 풀에서 퍼즐을 만들어 DB에 저장한다. 요청 시 즉석 생성하지 않고 시드/관리자 작업에서만 호출한다.
+ * 시드 결정성: 시간 초과(TIMEOUT)를 제외한 실패(품질 미달 등)만 seed에서 파생한 다음 시도로 넘어간다.
  * 풀 규칙: 난이도는 "이하"(EASY=쉬움, MEDIUM=쉬움+보통, HARD=전체), 주제는 null이면 전체.
  */
 @Service
@@ -33,12 +36,19 @@ public class PuzzleGenerationService {
 	private final WordRepository wordRepository;
 	private final PuzzleRepository puzzleRepository;
 	private final Clock clock;
-	private final GridGenerator generator = new GridGenerator();
+	private final GridGenerator generator;
 
+	@Autowired
 	public PuzzleGenerationService(WordRepository wordRepository, PuzzleRepository puzzleRepository, Clock clock) {
+		this(wordRepository, puzzleRepository, clock, new GridGenerator());
+	}
+
+	PuzzleGenerationService(WordRepository wordRepository, PuzzleRepository puzzleRepository, Clock clock,
+			GridGenerator generator) {
 		this.wordRepository = wordRepository;
 		this.puzzleRepository = puzzleRepository;
 		this.clock = clock;
+		this.generator = generator;
 	}
 
 	/** 같은 (난이도, 주제, 크기, seed)와 같은 단어 데이터라면 항상 같은 퍼즐이 나온다. */
@@ -69,6 +79,11 @@ public class PuzzleGenerationService {
 				layout = generator.generate(new ArrayList<>(byEnglish.keySet()).stream().sorted().toList(), size,
 						attemptSeed);
 			} catch (GridGenerationException e) {
+				if (e.reason() == Reason.TIMEOUT) {
+					// 시간 초과는 환경에 따라 달라지므로 다음 seed로 넘어가지 않는다 (같은 입력 → 같은 결과 보장)
+					throw PuzzleGenerationException.timedOut("grid generation timed out (difficulty=" + difficulty
+							+ ", topic=" + topic + ", size=" + size + ", seed=" + seed + ")");
+				}
 				continue;
 			}
 			if (layout.words().size() >= minWords) {

@@ -17,6 +17,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 
 /** 익명 풀이 세션. 2단계에서 소유자(게스트/회원)가 붙어 기록(PlayRecord)으로 이어진다. */
 @Entity
@@ -25,6 +26,10 @@ public class PlaySession {
 
 	@Id
 	private UUID id;
+
+	/** 비관적 잠금을 우회하는 코드가 생겨도 갱신 유실이 조용히 일어나지 않도록 하는 안전장치. */
+	@Version
+	private Long version;
 
 	@ManyToOne(fetch = FetchType.LAZY, optional = false)
 	@JoinColumn(name = "puzzle_id")

@@ -50,13 +50,15 @@ public final class GridGenerator {
 
 			List<PlacedWord> placed = new Search(size, order, rng, deadline).run();
 			GridLayout layout = GridLayout.fromWords(size, GridNumbering.assign(placed), words.size());
-			if (layout.placedRatio() >= config.minPlacedRatio()) {
+			int minCrossings = (int) Math.floor(config.minCrossingRatio() * layout.words().size());
+			if (layout.placedRatio() >= config.minPlacedRatio() && layout.crossings() >= minCrossings) {
 				return layout;
 			}
 		}
 		throw new GridGenerationException(Reason.QUALITY_NOT_MET,
-				"could not place at least " + (int) Math.round(config.minPlacedRatio() * 100)
-						+ "% of the words within " + config.maxAttempts() + " attempts");
+				"could not reach the quality target (placed >= " + (int) Math.round(config.minPlacedRatio() * 100)
+						+ "% of the words, crossings >= " + config.minCrossingRatio() + " per word) within "
+						+ config.maxAttempts() + " attempts");
 	}
 
 	private static void checkDeadline(long deadline) {

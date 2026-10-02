@@ -207,6 +207,31 @@ class PuzzleApiTest {
 	}
 
 	@Test
+	void answersAreOnlyDeliveredByRevealAndByCardsOfSolvedWords() throws Exception {
+		Puzzle puzzle = somePuzzle();
+		PuzzleEntry first = puzzle.getEntries().get(0);
+		String word = first.getWord().getEnglish();
+		String session = startSession(puzzle.getId());
+
+		String wrong = check(puzzle, session, "[" + answer(first, wrongAnswerOf(first)) + "]").andReturn().getResponse()
+				.getContentAsString();
+		String hint = entryAction("hint", puzzle, session, first.getId()).andReturn().getResponse().getContentAsString();
+		String definition = entryAction("definition-hint", puzzle, session, first.getId()).andReturn().getResponse()
+				.getContentAsString();
+		String forbiddenCard = mvc.perform(get("/api/words/{id}", first.getWord().getId()).header(SESSION, session))
+				.andExpect(status().isForbidden()).andReturn().getResponse().getContentAsString();
+
+		assertThat(wrong).doesNotContain(word);
+		assertThat(hint).doesNotContain(word);
+		assertThat(definition).doesNotContain(word);
+		assertThat(forbiddenCard).doesNotContain(word);
+
+		// 정답 보기(포기)로 세션을 종료한 뒤의 reveal 응답이 정답을 내려주는 유일한 경로다 (SPEC 3장 정책)
+		postJson("/api/puzzles/{id}/reveal", new Object[] { puzzle.getId() }, session, "{}")
+				.andExpect(status().isOk()).andExpect(jsonPath("$.entries[0].card.english").value(word));
+	}
+
+	@Test
 	void revealEndsTheSessionAndUnlocksAllWordCards() throws Exception {
 		Puzzle puzzle = somePuzzle();
 		String session = startSession(puzzle.getId());
@@ -273,6 +298,21 @@ class PuzzleApiTest {
 				.andExpect(jsonPath("$.code").value("MISSING_SESSION"));
 		check(puzzle, otherSession, allCorrect(puzzle)).andExpect(status().isBadRequest())
 				.andExpect(jsonPath("$.code").value("SESSION_MISMATCH"));
+	}
+
+	@Test
+	void rejectsDuplicateEntryIdsInOneCheckRequest() throws Exception {
+		Puzzle puzzle = somePuzzle();
+		PuzzleEntry first = puzzle.getEntries().get(0);
+		String session = startSession(puzzle.getId());
+
+		check(puzzle, session, "[" + answer(first, wrongAnswerOf(first)) + "," + answer(first, first.getWord().getEnglish()) + "]")
+				.andExpect(status().isBadRequest()).andExpect(jsonPath("$.code").value("DUPLICATE_ENTRY"));
+
+		// 거부된 요청은 아무 것도 바꾸지 않는다
+		check(puzzle, session, "[" + answer(first, first.getWord().getEnglish().substring(1)) + "]")
+				.andExpect(jsonPath("$.wrongCount").value(0))
+				.andExpect(jsonPath("$.results[0].status").value("INCOMPLETE"));
 	}
 
 	@Test

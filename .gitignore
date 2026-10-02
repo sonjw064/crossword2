@@ -38,3 +38,4 @@ out/
 
 ### Local ###
 .claude/
+.gradle-user/

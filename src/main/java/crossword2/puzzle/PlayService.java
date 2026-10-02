@@ -2,9 +2,11 @@ package crossword2.puzzle;
 
 import java.time.Clock;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -59,6 +61,14 @@ public class PlayService {
 	public CheckResponse check(Long puzzleId, String sessionHeader, CheckRequest request) {
 		Play play = loadActive(puzzleId, sessionHeader);
 		PlaySession session = play.session();
+
+		Set<Long> seenEntries = new HashSet<>();
+		for (AnswerItem item : request.answers()) {
+			if (!seenEntries.add(item.entryId())) {
+				throw new ApiException(HttpStatus.BAD_REQUEST, "DUPLICATE_ENTRY",
+						"entryId appears more than once: " + item.entryId());
+			}
+		}
 
 		List<EntryResult> results = new ArrayList<>();
 		for (AnswerItem item : request.answers()) {
@@ -126,7 +136,7 @@ public class PlayService {
 	/** 이 세션에서 맞혔거나 공개된 단어만 카드를 볼 수 있다. */
 	@Transactional(readOnly = true)
 	public WordCard wordCard(Long wordId, String sessionHeader) {
-		PlaySession session = findSession(sessionHeader);
+		PlaySession session = findSession(sessionHeader, false);
 		Word word = wordRepository.findById(wordId)
 				.orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "WORD_NOT_FOUND", "word not found"));
 		Puzzle puzzle = puzzleRepository.findWithEntriesById(session.getPuzzle().getId())
@@ -142,8 +152,9 @@ public class PlayService {
 		return cardOf(word);
 	}
 
+	/** 상태를 바꾸는 요청용: 세션 행을 잠그고 읽어, 같은 세션의 동시 요청을 하나씩 처리한다. */
 	private Play loadActive(Long puzzleId, String sessionHeader) {
-		PlaySession session = findSession(sessionHeader);
+		PlaySession session = findSession(sessionHeader, true);
 		if (!session.getPuzzle().getId().equals(puzzleId)) {
 			throw new ApiException(HttpStatus.BAD_REQUEST, "SESSION_MISMATCH", "session belongs to another puzzle");
 		}
@@ -156,7 +167,7 @@ public class PlayService {
 		return new Play(session, puzzle, entries);
 	}
 
-	private PlaySession findSession(String sessionHeader) {
+	private PlaySession findSession(String sessionHeader, boolean lock) {
 		if (sessionHeader == null || sessionHeader.isBlank()) {
 			throw new ApiException(HttpStatus.BAD_REQUEST, "MISSING_SESSION", "X-Play-Session header is required");
 		}
@@ -166,7 +177,7 @@ public class PlayService {
 		} catch (IllegalArgumentException e) {
 			throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_SESSION", "X-Play-Session is not a valid id");
 		}
-		return sessionRepository.findById(id)
+		return (lock ? sessionRepository.findForUpdate(id) : sessionRepository.findById(id))
 				.orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "SESSION_NOT_FOUND", "session not found"));
 	}
 

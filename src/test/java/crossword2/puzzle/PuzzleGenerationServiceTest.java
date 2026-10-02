@@ -3,6 +3,8 @@ package crossword2.puzzle;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.time.Clock;
+import java.time.Duration;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -10,10 +12,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
 
+import crossword2.grid.GeneratorConfig;
+import crossword2.grid.GridGenerator;
 import crossword2.grid.GridLayout;
 import crossword2.grid.GridValidator;
 import crossword2.grid.PlacedWord;
 import crossword2.word.Difficulty;
+import crossword2.word.WordRepository;
 
 @SpringBootTest
 @Transactional
@@ -24,6 +29,12 @@ class PuzzleGenerationServiceTest {
 
 	@Autowired
 	PuzzleRepository puzzleRepository;
+
+	@Autowired
+	WordRepository wordRepository;
+
+	@Autowired
+	Clock clock;
 
 	private static List<String> signature(Puzzle p) {
 		return p.getEntries().stream()
@@ -87,6 +98,45 @@ class PuzzleGenerationServiceTest {
 	void failsOnUnsupportedSize() {
 		assertThatThrownBy(() -> service.generate(Difficulty.EASY, null, 5, 1, PuzzleType.NORMAL))
 				.isInstanceOf(PuzzleGenerationException.class);
+	}
+
+	@Test
+	void timeoutFailsInsteadOfFallingBackToAnotherSeed() {
+		GridGenerator timedOut = new GridGenerator(GeneratorConfig.defaults().withTimeLimit(Duration.ZERO));
+		PuzzleGenerationService slow = new PuzzleGenerationService(wordRepository, puzzleRepository, clock, timedOut);
+		long before = puzzleRepository.count();
+
+		assertThatThrownBy(() -> slow.generate(Difficulty.MEDIUM, null, 10, 42, PuzzleType.NORMAL))
+				.isInstanceOfSatisfying(PuzzleGenerationException.class, e -> assertThat(e.isTimeout()).isTrue());
+
+		assertThat(puzzleRepository.count()).isEqualTo(before);
+	}
+
+	@Test
+	void resultDoesNotDependOnTheTimeLimit() {
+		GridGenerator generous = new GridGenerator(GeneratorConfig.defaults().withTimeLimit(Duration.ofMinutes(5)));
+		PuzzleGenerationService relaxed = new PuzzleGenerationService(wordRepository, puzzleRepository, clock, generous);
+
+		Puzzle normal = service.generate(Difficulty.MEDIUM, null, 10, 42, PuzzleType.NORMAL);
+		Puzzle relaxedResult = relaxed.generate(Difficulty.MEDIUM, null, 10, 42, PuzzleType.NORMAL);
+
+		assertThat(signature(relaxedResult)).isEqualTo(signature(normal));
+	}
+
+	@Test
+	void everyPuzzleMeetsTheCrossingTarget() {
+		double ratio = GeneratorConfig.defaults().minCrossingRatio();
+		for (Puzzle p : puzzleRepository.findAll()) {
+			List<PlacedWord> placed = p.getEntries().stream()
+					.map(e -> new PlacedWord(e.getWord().getEnglish(), e.getStartRow(), e.getStartCol(),
+							e.getDirection(), e.getNumber()))
+					.toList();
+			GridLayout layout = GridLayout.fromWords(p.getSize(), placed, placed.size());
+
+			assertThat(layout.crossings()).as("puzzle %d", p.getId())
+					.isGreaterThanOrEqualTo((int) Math.floor(ratio * placed.size()))
+					.isGreaterThanOrEqualTo(placed.size() - 1);
+		}
 	}
 
 	@Test

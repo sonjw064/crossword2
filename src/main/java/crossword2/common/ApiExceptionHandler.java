@@ -1,5 +1,6 @@
 package crossword2.common;
 
+import org.springframework.dao.ConcurrencyFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -17,6 +18,13 @@ public class ApiExceptionHandler {
 	@ExceptionHandler(ApiException.class)
 	ResponseEntity<ErrorResponse> handleApi(ApiException e) {
 		return ResponseEntity.status(e.status()).body(new ErrorResponse(e.code(), e.getMessage()));
+	}
+
+	/** 잠금 대기 초과, 교착, 낙관적 잠금 충돌 등. 클라이언트는 같은 요청을 다시 보내면 된다. */
+	@ExceptionHandler(ConcurrencyFailureException.class)
+	ResponseEntity<ErrorResponse> handleConcurrency(ConcurrencyFailureException e) {
+		return ResponseEntity.status(HttpStatus.CONFLICT)
+				.body(new ErrorResponse("CONCURRENT_UPDATE", "the request conflicted with another one, please retry"));
 	}
 
 	@ExceptionHandler(MethodArgumentNotValidException.class)

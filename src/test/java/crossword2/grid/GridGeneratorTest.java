@@ -53,6 +53,8 @@ class GridGeneratorTest {
 					.isEmpty();
 			assertThat(layout.placedRatio()).isGreaterThanOrEqualTo(0.5);
 			assertThat(layout.crossings()).isGreaterThanOrEqualTo(layout.words().size() - 1);
+			assertThat(layout.crossings())
+					.isGreaterThanOrEqualTo((int) Math.floor(GeneratorConfig.defaults().minCrossingRatio() * layout.words().size()));
 			assertThat(layout.words()).extracting(PlacedWord::word).isSubsetOf(words);
 		}
 	}
@@ -112,6 +114,32 @@ class GridGeneratorTest {
 	@Test
 	void failsWhenWordsCannotCross() {
 		assertFailure(List.of("abc", "def", "ghi", "jkl"), 10, Reason.QUALITY_NOT_MET);
+	}
+
+	@Test
+	void rejectsLayoutsBelowTheCrossingTarget() {
+		GeneratorConfig impossible = new GeneratorConfig(5, 500, 0.5, 3.0, Duration.ofSeconds(5));
+
+		assertThatThrownBy(() -> new GridGenerator(impossible).generate(TestWords.pick(15, 8, 1), 10, 1))
+				.isInstanceOfSatisfying(GridGenerationException.class, e -> assertThat(e.reason()).isEqualTo(Reason.QUALITY_NOT_MET));
+	}
+
+	@Test
+	void canRequireLoopsInTheGrid() {
+		GeneratorConfig loops = new GeneratorConfig(30, 1_500, 0.5, 1.0, Duration.ofSeconds(5));
+		GridGenerator strict = new GridGenerator(loops);
+
+		GridLayout layout = null;
+		for (long seed = 1; seed <= 20 && layout == null; seed++) {
+			try {
+				layout = strict.generate(TestWords.pick(22, 8, seed), 12, seed);
+			} catch (GridGenerationException e) {
+				assertThat(e.reason()).isEqualTo(Reason.QUALITY_NOT_MET);
+			}
+		}
+
+		assertThat(layout).as("a grid with at least one loop for some seed").isNotNull();
+		assertThat(layout.crossings()).isGreaterThanOrEqualTo(layout.words().size());
 	}
 
 	@Test
