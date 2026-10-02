@@ -8,7 +8,7 @@
   불확실하면 추측하지 말고 공식 문서나 실제 빌드로 확인한다.
 - 루트 패키지: `crossword2`
 - DB: PostgreSQL (개발 초기 H2 허용), Spring Data JPA
-- 인증: Spring Security + JWT / 실시간: Spring WebSocket + STOMP
+- 인증: Spring Security OAuth2 Resource Server(JWT, HS256) + 교체형 refresh 토큰 / 실시간: Spring WebSocket + STOMP
 - 프론트: HTML/CSS/JS (`src/main/resources/static`, 프레임워크·빌드 없음, API만 호출). 서버에서 온 문자열은 `textContent`로만 넣고 `innerHTML`은 쓰지 않는다. 화면과 무관한 로직은 `js/grid-model.js`에 순수 함수로 둔다.
 - 테스트: JUnit 5, Mockito, Spring Boot Test
 
@@ -23,6 +23,8 @@
 6. 대련 중에는 정의 힌트/단어 카드 조회를 서버가 차단한다.
 7. 풀이 세션(`PlaySession`)의 상태를 바꾸는 코드는 `findForUpdate`(행 잠금)로 세션을 읽는다. 잠금 없이 읽고 수정하지 않는다.
 8. 시크릿(JWT 키, DB 비밀번호)은 코드에 쓰지 않고 환경변수로 받는다.
+9. 컨트롤러는 `@AuthenticationPrincipal Jwt`를 `Owner.fromJwt()`로 바꿔 쓴다(익명이면 null). 비밀번호는 BCrypt, refresh 토큰은 해시만 저장한다.
+10. 응답에 CSP(`default-src 'self'`)가 붙는다. 프론트에서 인라인 스크립트나 `style` 속성(`setAttribute('style')`)을 쓰지 말고 `element.style.setProperty`를 쓴다.
 
 ## 명령어
 - 빌드/테스트: `./gradlew build`

@@ -1,4 +1,6 @@
 import { h, clear } from './dom.js';
+import * as auth from './auth.js';
+import { nicknameError } from './auth-views.js';
 import * as api from './api.js';
 import { DIFFICULTY_LABEL, topicLabel } from './labels.js';
 import { MEANING_MODES, getMeaningMode, setMeaningMode } from './settings.js';
@@ -95,6 +97,7 @@ export async function mountSelect(root, ctx, handle) {
 
   root.append(
     h('section', { class: 'select' },
+      guestBanner(ctx),
       h('h1', {}, '퍼즐 고르기'),
       h('div', { class: 'filters' },
         h('div', { class: 'field' }, h('span', { class: 'label' }, '난이도'), chips('난이도', options.difficulties, (d) => DIFFICULTY_LABEL[d])),
@@ -106,4 +109,36 @@ export async function mountSelect(root, ctx, handle) {
       settings),
   );
   await load();
+}
+
+/** 로그인하지 않은 방문자에게 보이는 안내: 닉네임을 정하면 게스트로 시작해 기록을 남길 수 있다(선택). */
+function guestBanner(ctx) {
+  if (auth.currentUser()) return null;
+  const input = h('input', { type: 'text', maxlength: '20', placeholder: '닉네임 (2~20자)', 'aria-label': '닉네임' });
+  const error = h('p', { class: 'form-error', role: 'alert', hidden: true });
+  const start = h('button', {
+    type: 'button',
+    class: 'primary',
+    onclick: async () => {
+      const problem = nicknameError(input.value.trim());
+      error.hidden = !problem;
+      error.textContent = problem;
+      if (problem) return;
+      start.disabled = true;
+      try {
+        await auth.startGuest(input.value.trim());
+        ctx.navigate('#/');
+      } catch (e) {
+        error.textContent = e.message;
+        error.hidden = false;
+        start.disabled = false;
+      }
+    },
+  }, '게스트로 시작');
+  return h('div', { class: 'guest-banner' },
+    h('strong', {}, '기록을 남기고 싶다면'),
+    h('p', { class: 'muted' }, '닉네임만 정하면 게스트로 시작할 수 있어요. 로그인 없이 그냥 풀어도 괜찮아요.'),
+    h('div', { class: 'row' }, input, start),
+    error,
+    h('p', { class: 'muted' }, h('a', { href: '#/login' }, '로그인'), ' · ', h('a', { href: '#/signup' }, '회원가입')));
 }

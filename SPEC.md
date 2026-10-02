@@ -136,9 +136,12 @@
 - `Word`: id, english, korean(퍼즐용 한국어 뜻, 단어당 하나로 고정), partOfSpeech, definition(사전적 정의), difficulty, topic, example, active
 - `Puzzle`: id, size, seed, difficulty, topic(null이면 전체 주제), wordCount, createdAt, type(NORMAL/DAILY)
 - `PuzzleEntry`: id, puzzleId, wordId, startRow, startCol, direction, number
-- `PlaySession`: id(UUID), puzzleId, startedAt, finishedAt, status(IN_PROGRESS/COMPLETED/GAVE_UP), wrongCount, 맞힌 항목·힌트 사용 항목 (1단계는 익명 세션, 2단계에서 소유자(ownerType/ownerId)를 붙여 `PlayRecord`로 연결)
-- `User`: id, email, passwordHash, nickname, role, createdAt
+- `PlaySession`: id(UUID), puzzleId, startedAt, finishedAt, status(IN_PROGRESS/COMPLETED/GAVE_UP), wrongCount, 맞힌 항목·힌트 사용 항목, ownerType/ownerId(nullable)
+  - 토큰 없이 시작한 익명 세션은 소유자가 없고 세션 ID를 아는 누구나 쓸 수 있으며 기록되지 않는다.
+  - 토큰(게스트/회원)으로 시작한 세션은 소유자만 쓸 수 있다(다른 사용자·익명은 403 `SESSION_FORBIDDEN`).
+- `User`: id, email(고유, 소문자 정규화), passwordHash(BCrypt), nickname, role(USER/ADMIN), createdAt
 - `GuestAccount`: id(UUID), nickname, createdAt, migratedToUserId(nullable)
+- `RefreshToken`: tokenHash(SHA-256, 원문은 저장하지 않음), familyId, ownerType, ownerId, expiresAt, revokedAt, createdAt
 - `PlayRecord`: id, puzzleId, ownerType, ownerId, elapsedSec, hintCount, wrongCount, completedAt
 - `WrongAnswer`: id, ownerType, ownerId, wordId, count, lastAt
 - `Room` (메모리 관리): code, hostId, settings, status, players
@@ -151,9 +154,17 @@
 
 ## 7. API 초안
 
-**인증**
-- `POST /api/auth/guest` 게스트 생성 및 토큰 발급
-- `POST /api/auth/signup`, `POST /api/auth/login` (게스트 ID 포함 시 기록 이전)
+**인증** (게스트와 회원 모두 같은 방식의 토큰을 받는다)
+- `POST /api/auth/guest` `{nickname}` 게스트 생성 및 토큰 발급 (201)
+- `POST /api/auth/signup` `{email, password, nickname}` (201), `POST /api/auth/login` `{email, password}` (게스트 기록 이전은 2-2에서 추가)
+- `POST /api/auth/refresh` `{refreshToken}` 새 토큰 쌍 발급(교체), `POST /api/auth/logout` `{refreshToken}` 토큰 폐기(204)
+- `GET /api/me` 현재 주체(게스트/회원) 프로필. 토큰 필수
+- 응답: `{accessToken, expiresIn(초), refreshToken, ownerType, ownerId, nickname, role}` (`role`은 회원만)
+- **토큰 규칙**: access는 JWT(HS256) 30분, refresh는 임의 문자열이며 회원 30일/게스트 90일. refresh는 한 번 쓰면 폐기되고 새 토큰으로 교체되며, 폐기된 토큰이 다시 오면 탈취로 보고 같은 로그인(family)의 토큰을 모두 폐기한다. 서명 키는 환경변수 `JWT_SECRET`(prod 필수, 32바이트 이상)
+- **입력 규칙**: 닉네임 2~20자(글자·숫자·밑줄·하이픈·공백, 처음과 끝은 공백 불가), 비밀번호 8~72바이트(글자와 숫자 포함), 이메일 소문자 정규화
+- **오류**: 로그인 실패는 이메일 존재 여부와 무관하게 같은 401 `INVALID_CREDENTIALS`, 이메일 중복은 409 `EMAIL_TAKEN`, 요청 제한 초과는 429 `RATE_LIMITED`
+- **Rate limit**(IP 기준, 인메모리): 로그인 분당 10회(이메일 기준도 별도 10회), 가입 시간당 10회, 게스트 생성 시간당 30회. 한도는 `app.rate-limit.*` 설정
+- **접근 제어**: `/api/auth/**`, 퍼즐/단어 API는 공개(익명 풀이 허용, 단 잘못된 토큰이 오면 401), `/api/me/**`는 로그인(게스트 포함) 필요, `/api/admin/**`는 ADMIN만, 그 외는 거부. 응답에 CSP 등 보안 헤더를 붙이고 CORS(다른 출처)는 허용하지 않는다
 
 **퍼즐** (풀이 관련 요청은 `X-Play-Session` 헤더에 세션 ID를 담는다)
 - `GET /api/puzzles/options` 선택 가능한 난이도/주제/크기 (실제 존재하는 퍼즐 기준)

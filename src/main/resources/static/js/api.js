@@ -1,42 +1,20 @@
-export class ApiError extends Error {
-  constructor(status, code, message) {
-    super(message);
-    this.status = status;
-    this.code = code;
-  }
-}
+import { rawRequest, ApiError } from './http.js';
+import * as auth from './auth.js';
 
-const MESSAGES = {
-  NETWORK: '서버에 연결할 수 없어요. 잠시 후 다시 시도해 주세요.',
-  SESSION_FINISHED: '이미 끝난 퍼즐이에요.',
-  SESSION_NOT_FOUND: '풀이 세션을 찾을 수 없어요. 퍼즐을 다시 시작해 주세요.',
-  PUZZLE_NOT_FOUND: '퍼즐을 찾을 수 없어요.',
-  CONCURRENT_UPDATE: '요청이 겹쳤어요. 다시 한 번 눌러 주세요.',
-  CARD_NOT_AVAILABLE: '맞힌 단어만 카드를 볼 수 있어요.',
-};
+export { ApiError };
 
-async function request(method, url, { body, session } = {}) {
-  const headers = { Accept: 'application/json' };
-  if (body !== undefined) headers['Content-Type'] = 'application/json';
-  if (session) headers['X-Play-Session'] = session;
-  let response;
+/** 로그인(게스트 포함) 상태면 토큰을 붙이고, 401이면 한 번 갱신해 다시 시도한다. */
+async function request(method, url, options = {}) {
+  const token = await auth.getAccessToken();
   try {
-    response = await fetch(url, { method, headers, body: body === undefined ? undefined : JSON.stringify(body) });
-  } catch {
-    throw new ApiError(0, 'NETWORK', MESSAGES.NETWORK);
+    return await rawRequest(method, url, { ...options, token });
+  } catch (e) {
+    if (e instanceof ApiError && e.status === 401 && token) {
+      const renewed = await auth.refreshNow(); // 실패하면 null: 토큰 없이(익명으로) 다시 시도한다
+      return rawRequest(method, url, { ...options, token: renewed });
+    }
+    throw e;
   }
-  const text = await response.text();
-  let data = null;
-  try {
-    data = text ? JSON.parse(text) : null;
-  } catch {
-    // JSON이 아닌 응답은 아래 오류 처리로 넘긴다
-  }
-  if (!response.ok) {
-    const code = data?.code ?? 'ERROR';
-    throw new ApiError(response.status, code, MESSAGES[code] ?? '문제가 생겼어요. 잠시 후 다시 시도해 주세요.');
-  }
-  return data;
 }
 
 export const getOptions = () => request('GET', '/api/puzzles/options');
@@ -59,3 +37,4 @@ export const definitionHint = (id, session, entryId) =>
   request('POST', `/api/puzzles/${id}/definition-hint`, { session, body: { entryId } });
 export const reveal = (id, session) => request('POST', `/api/puzzles/${id}/reveal`, { session, body: {} });
 export const wordCard = (wordId, session) => request('GET', `/api/words/${wordId}`, { session });
+export const getMe = () => request('GET', '/api/me');
