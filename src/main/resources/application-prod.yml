@@ -11,6 +11,9 @@ app:
     enabled: false
   auth:
     jwt-secret: ${JWT_SECRET}
+  feedback:
+    # 웹 루트 밖의 쓰기 가능한 폴더(백업 대상). 필수.
+    upload-dir: ${UPLOAD_DIR}
 server:
   # 클라이언트 IP(Rate limit 키)는 신뢰하는 프록시가 보낸 X-Forwarded-For에서만 읽는다.
   # 앱 포트는 프록시(Nginx)만 접근할 수 있어야 하고, 프록시는 X-Forwarded-For에 실제 접속 주소를 넣어야 한다.

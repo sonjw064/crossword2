@@ -1,7 +1,9 @@
 import { h, clear } from './dom.js';
 import * as api from './api.js';
 import * as M from './grid-model.js';
+import * as auth from './auth.js';
 import { getMeaningMode } from './settings.js';
+import { REASONS, quickReportBody, screenInfo } from './feedback-model.js';
 import { DIFFICULTY_LABEL, DIRECTION_LABEL, POS_LABEL, formatTime, topicLabel } from './labels.js';
 
 export async function mountPlay(root, puzzleId, ctx, handle) {
@@ -37,6 +39,7 @@ export async function mountPlay(root, puzzleId, ctx, handle) {
   const hintEl = h('b', {}, '0');
   const wrongEl = h('b', {}, '0');
   const clueBar = h('div', { class: 'clue-bar' });
+  const reportPanel = h('div', { class: 'report-panel', hidden: true });
   const definitionEl = h('div', { class: 'definition', hidden: true });
   const cardEl = h('div', { class: 'word-card', hidden: true });
   const bannerEl = h('div', { class: 'banner', hidden: true });
@@ -92,9 +95,10 @@ export async function mountPlay(root, puzzleId, ctx, handle) {
     h('section', { class: 'play' },
       h('div', { class: 'play-head' },
         h('a', { class: 'back', href: '#/' }, '← 목록'),
+        h('a', { class: 'back', href: `#/feedback?puzzle=${puzzleId}` }, '문의'),
         h('span', { class: 'meta' }, `${DIFFICULTY_LABEL[puzzle.difficulty]} · ${topicLabel(puzzle.topic)} · ${puzzle.size}×${puzzle.size}`),
         h('span', { class: 'stats' }, '⏱ ', timerEl, ' · 힌트 ', hintEl, ' · 오답 ', wrongEl)),
-      clueBar,
+      clueBar, reportPanel,
       h('div', { class: 'play-layout' },
         h('div', { class: 'board-col' },
           gridEl, kbd,
@@ -134,7 +138,8 @@ export async function mountPlay(root, puzzleId, ctx, handle) {
     clear(clueBar).append(
       h('b', {}, `${entry.number} ${DIRECTION_LABEL[entry.direction]}`), ' ',
       h('span', {}, entry.clue), ' ',
-      h('small', { class: 'muted' }, `${entry.partOfSpeech ? POS_LABEL[entry.partOfSpeech] + ' · ' : ''}${entry.length}글자`));
+      h('small', { class: 'muted' }, `${entry.partOfSpeech ? POS_LABEL[entry.partOfSpeech] + ' · ' : ''}${entry.length}글자`), ' ',
+      h('button', { type: 'button', class: 'link report-toggle', title: '이 단어/뜻이 이상해요', onclick: openReport }, '⚑ 신고'));
     const definition = definitions.get(sel.entryId);
     definitionEl.hidden = !definition;
     if (definition) definitionEl.textContent = `정의: ${definition}`;
@@ -299,6 +304,43 @@ export async function mountPlay(root, puzzleId, ctx, handle) {
     } catch {
       // 카드는 부가 정보라 실패해도 풀이를 막지 않는다
     }
+  }
+
+  // ---------- 퍼즐 내 빠른 신고 ----------
+  /** 현재 선택한 단어의 오류를 신고한다. 단어 ID와 퍼즐 ID는 자동으로 보낸다(정답은 서버에서 확인하므로 화면에 나오지 않는다). */
+  function openReport() {
+    if (!auth.currentUser()) {
+      ctx.toast('신고하려면 먼저 닉네임을 정하고(게스트) 시작해 주세요.');
+      return;
+    }
+    const entry = model.entries.get(sel.entryId);
+    const reason = h('select', { 'aria-label': '신고 사유' }, REASONS.map((r) => h('option', { value: r.value }, r.label)));
+    const comment = h('input', { type: 'text', maxlength: '300', placeholder: '덧붙일 말 (선택)', 'aria-label': '덧붙일 말' });
+    const send = h('button', {
+      type: 'button',
+      class: 'primary',
+      onclick: async () => {
+        send.disabled = true;
+        try {
+          const created = await api.createFeedback({
+            data: quickReportBody({
+              puzzleId, wordId: entry.wordId, reason: reason.value, comment: comment.value,
+              screen: screenInfo({ width: innerWidth, height: innerHeight, pixelRatio: devicePixelRatio }) ?? undefined,
+            }),
+          });
+          reportPanel.hidden = true;
+          ctx.toast(created.replyAvailable ? '신고가 접수됐어요. 고마워요!' : '신고가 접수됐어요. 회원가입하면 답변을 받을 수 있어요.');
+        } catch (e) {
+          ctx.toast(e.message);
+          send.disabled = false;
+        }
+      },
+    }, '보내기');
+    clear(reportPanel).append(
+      h('strong', {}, `${entry.number} ${DIRECTION_LABEL[entry.direction]} "${entry.clue}" 신고`), ' ',
+      reason, comment, send,
+      h('button', { type: 'button', onclick: () => (reportPanel.hidden = true) }, '닫기'));
+    reportPanel.hidden = false;
   }
 
   // ---------- 종료 ----------

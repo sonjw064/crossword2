@@ -150,9 +150,9 @@
   - 게스트 → 회원 이전 시 기록은 소유자만 바꾸고, 오답노트는 같은 단어끼리 `count`를 합산하고 `lastAt`은 더 최근 값으로 병합한다
 - `Room` (메모리 관리): code, hostId, settings, status, players
 - `MatchResult`: id, roomCode, puzzleId, mode, results, endedAt
-- `Feedback`: id, type, title, content, status, authorType, authorId, puzzleId, wordId, deviceInfo, createdAt
-- `FeedbackReply`: id, feedbackId, adminId, content, createdAt, readAt
-- `FeedbackAttachment`: id, feedbackId, storedPath, contentType, size
+- `Feedback`: id, type(BUG/WORD_ERROR/SUGGESTION/GENERAL), title(1~100자), content(1~2000자), status(RECEIVED/IN_REVIEW/RESOLVED/REJECTED), authorType, authorId(익명화되면 null), puzzleId, wordId, reason(WRONG_MEANING/MULTIPLE_ANSWERS/TYPO/OTHER, 단어 신고용), deviceInfo, createdAt, anonymizedAt
+- `FeedbackReply`: id, feedbackId, adminId, content, createdAt, readAt (작성 API는 4단계 관리자 기능, 회원 문의에만 가능)
+- `FeedbackAttachment`: id, feedbackId(고유), storedName(서버가 만든 임의 이름), contentType, size
 
 > `ownerType`: GUEST / MEMBER. 게스트 이전 시 `ownerType`과 `ownerId`를 회원으로 갱신한다.
 
@@ -203,9 +203,17 @@
 - WebSocket(STOMP) 이벤트: `JOIN`, `READY`, `START`, `SUBMIT_WORD`, `SCORE_UPDATE`, `END`, `LEAVE`, `RECONNECT`
 
 **문의**
-- `POST /api/feedback` (게스트 허용, `replyAvailable` 반환)
-- `GET /api/feedback/mine` (로그인 필수, 게스트는 401)
-- `PATCH /api/feedback/replies/{id}/read`
+- `POST /api/feedback` (게스트 허용, `replyAvailable` 반환). `multipart/form-data`의 `data`(JSON) + 선택 `screenshot`, 또는 첨부 없이 JSON. 토큰이 없는 익명은 401
+  - 본문: `{type, title?, content?, puzzleId?, wordId?, reason?, screen?}`. 제목·내용은 필수이고(제목 100자, 내용 2000자, 앞뒤 공백 제거, 제어 문자 거부, 제목은 줄바꿈 불가), **빠른 신고**(`wordId` 있음)일 때만 생략할 수 있다(제목은 "[신고] 한국어 뜻"으로 채워짐)
+  - 빠른 신고: `type=WORD_ERROR` + `puzzleId` + `wordId` + `reason`이 모두 필요하고, 그 단어가 정말 그 퍼즐의 항목인지 서버가 검증한다. `reason`은 `wordId`와 함께만, `wordId`는 `WORD_ERROR`에만 쓸 수 있다
+  - 자동 첨부: 작성자 ID(토큰), `User-Agent`(250자 제한)와 클라이언트가 보낸 화면 크기(`390x844@3` 형식)를 `deviceInfo`로, 퍼즐 ID(클라이언트가 보낸 값, 존재 검증)
+  - **Rate limit**: 작성자(ID)당 시간당 5건, IP당 시간당 10건(`app.feedback.per-owner-per-hour`, `per-ip-per-hour`). 초과 시 429. 게스트가 이미 회원으로 이전됐다면 401(`GUEST_MIGRATED`)
+- `GET /api/feedback/mine` (회원 전용, 게스트는 401 `MEMBER_ONLY`): 본인 문의 최신순 + 답변·읽음 여부 + `unreadCount`. `GET /api/feedback/unread-count`: 읽지 않은 답변 수(헤더 뱃지용, 회원 전용)
+- `PATCH /api/feedback/replies/{id}/read`: 본인 문의의 답변만 읽음 처리(`readAt`은 처음 한 번만 기록). 남의 답변과 없는 답변은 모두 404
+- `GET /api/feedback/{id}/attachment`: 작성자 본인만(아니면 404). 저장된 Content-Type, `nosniff`, `CSP: sandbox`, `no-store`로 내려준다
+- **작성자 응답에는 영어 정답 단어를 넣지 않는다**: 단어 신고는 풀이 도중에도 하므로 응답과 내 문의 내역에는 `wordId`와 한국어 뜻(`wordKorean`)만 준다
+- **스크린샷 정책**: PNG/JPEG만, 2MB 이하, 가로·세로 4096px 이하·1,200만 픽셀 이하. 확장자/Content-Type이 아니라 파일 앞부분(magic bytes)으로 판별하고, 디코딩 전에 크기를 확인해 압축 폭탄을 거부하며, **서버가 픽셀만 다시 인코딩**해 저장해 EXIF(위치 등)와 이미지 뒤에 덧붙인 데이터를 제거한다. 사용자가 지은 파일명은 쓰지 않고 웹 루트 밖(`app.feedback.upload-dir`, 운영은 `UPLOAD_DIR`)에 임의 UUID 이름으로 저장하며 정적으로 서빙하지 않는다. 거부된 첨부가 있는 문의는 저장되지 않는다
+- **게스트 문의 보관**: 게스트가 쓴 문의는 90일(`app.feedback.guest-retention`)이 지나면 매일 새벽 3:40에 익명화한다(작성자 ID·기기 정보·첨부 삭제, 제목/내용은 통계를 위해 유지). 회원이 쓴 문의와 회원으로 이전된 문의는 대상이 아니다
 - `GET /api/admin/feedback`, `PATCH /api/admin/feedback/{id}`, `POST /api/admin/feedback/{id}/reply`
 
 **관리자**

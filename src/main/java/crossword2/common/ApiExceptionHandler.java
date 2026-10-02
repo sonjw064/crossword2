@@ -4,6 +4,10 @@ import org.springframework.dao.ConcurrencyFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.MultipartException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -38,6 +42,23 @@ public class ApiExceptionHandler {
 	@ExceptionHandler(HttpMessageNotReadableException.class)
 	ResponseEntity<ErrorResponse> handleUnreadable(HttpMessageNotReadableException e) {
 		return badRequest("MALFORMED_REQUEST", "request body is missing or malformed");
+	}
+
+	@ExceptionHandler(MaxUploadSizeExceededException.class)
+	ResponseEntity<ErrorResponse> handleTooLarge(MaxUploadSizeExceededException e) {
+		return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE)
+				.body(new ErrorResponse("ATTACHMENT_TOO_LARGE", "the upload is too large"));
+	}
+
+	@ExceptionHandler({ MissingServletRequestPartException.class, MultipartException.class })
+	ResponseEntity<ErrorResponse> handleBadMultipart(Exception e) {
+		return badRequest("MALFORMED_REQUEST", "the multipart request is missing a part or malformed");
+	}
+
+	@ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+	ResponseEntity<ErrorResponse> handleUnsupportedMedia(HttpMediaTypeNotSupportedException e) {
+		return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
+				.body(new ErrorResponse("UNSUPPORTED_MEDIA_TYPE", "unsupported content type"));
 	}
 
 	@ExceptionHandler(MethodArgumentTypeMismatchException.class)

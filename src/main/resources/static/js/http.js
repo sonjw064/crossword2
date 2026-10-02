@@ -20,17 +20,25 @@ const MESSAGES = {
   VALIDATION_FAILED: '입력한 내용을 확인해 주세요.',
   UNAUTHORIZED: '로그인이 필요해요.',
   INVALID_REFRESH_TOKEN: '로그인이 만료됐어요. 다시 로그인해 주세요.',
+  MEMBER_ONLY: '회원만 사용할 수 있어요.',
+  INVALID_ATTACHMENT: '스크린샷은 PNG 또는 JPEG 이미지(최대 2MB)만 첨부할 수 있어요.',
+  ATTACHMENT_TOO_LARGE: '스크린샷이 너무 커요. 2MB 이하로 올려 주세요.',
+  MALFORMED_REQUEST: '요청 형식이 올바르지 않아요.',
+  GUEST_MIGRATED: '이 게스트는 이미 회원으로 이전됐어요. 다시 로그인해 주세요.',
+  REPLY_NOT_FOUND: '답변을 찾을 수 없어요.',
 };
 
 /** 토큰/세션 처리 없이 요청 하나를 보내고 JSON을 돌려준다. 실패하면 ApiError. */
 export async function rawRequest(method, url, { body, session, token } = {}) {
   const headers = { Accept: 'application/json' };
-  if (body !== undefined) headers['Content-Type'] = 'application/json';
+  // FormData는 브라우저가 경계(boundary)가 포함된 Content-Type을 직접 붙이므로 JSON으로 바꾸거나 헤더를 지정하지 않는다
+  const isForm = typeof FormData !== 'undefined' && body instanceof FormData;
+  if (body !== undefined && !isForm) headers['Content-Type'] = 'application/json';
   if (session) headers['X-Play-Session'] = session;
   if (token) headers.Authorization = `Bearer ${token}`;
   let response;
   try {
-    response = await fetch(url, { method, headers, body: body === undefined ? undefined : JSON.stringify(body) });
+    response = await fetch(url, { method, headers, body: body === undefined || isForm ? body : JSON.stringify(body) });
   } catch {
     throw new ApiError(0, 'NETWORK', MESSAGES.NETWORK);
   }

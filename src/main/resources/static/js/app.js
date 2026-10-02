@@ -3,6 +3,9 @@ import { mountPlay } from './play.js';
 import { mountResult } from './result.js';
 import { mountLogin, mountSignup } from './auth-views.js';
 import { mountProgress, mountWrongAnswers } from './progress-views.js';
+import { mountFeedbackForm, mountMyFeedback } from './feedback-views.js';
+import { unreadBadge } from './feedback-model.js';
+import * as api from './api.js';
 import { clear, h } from './dom.js';
 import * as auth from './auth.js';
 
@@ -18,6 +21,8 @@ const ctx = {
     if (location.hash === hash) route();
     else location.hash = hash;
   },
+  /** 헤더의 "내 문의" 읽지 않음 뱃지를 다시 불러온다(회원만). */
+  refreshBadge,
   toast(message) {
     toastEl.textContent = message;
     toastEl.hidden = false;
@@ -25,6 +30,22 @@ const ctx = {
     toastTimer = setTimeout(() => (toastEl.hidden = true), 3500);
   },
 };
+
+const badgeEl = h('span', { class: 'badge-count', hidden: true, 'aria-label': '읽지 않은 답변' });
+
+async function refreshBadge() {
+  const user = auth.currentUser();
+  let text = '';
+  if (user?.type === 'MEMBER') {
+    try {
+      text = unreadBadge((await api.getUnreadCount()).count);
+    } catch {
+      // 뱃지는 부가 정보라 실패해도 조용히 숨긴다
+    }
+  }
+  badgeEl.textContent = text;
+  badgeEl.hidden = !text;
+}
 
 function renderNav() {
   const user = auth.currentUser();
@@ -35,7 +56,11 @@ function renderNav() {
   }
   navEl.append(
     h('a', { href: '#/me' }, '내 기록'), h('a', { href: '#/wrong-answers' }, '오답노트'),
+    h('a', { href: '#/feedback' }, '문의하기'),
     h('span', { class: 'who' }, user.nickname, h('small', { class: 'muted' }, user.type === 'GUEST' ? ' (게스트)' : '')));
+  if (user.type === 'MEMBER') {
+    navEl.append(h('a', { href: '#/my-feedback' }, '내 문의', badgeEl)); // 회원만: 답변은 회원만 받을 수 있다
+  }
   if (user.type === 'GUEST') {
     navEl.append(h('a', { href: '#/login' }, '로그인'), h('a', { href: '#/signup' }, '회원가입'));
   }
@@ -62,7 +87,9 @@ function route() {
   renderNav();
   window.scrollTo(0, 0);
 
-  const hash = location.hash || '#/';
+  const [hash, queryString = ''] = (location.hash || '#/').split('?');
+  const query = new URLSearchParams(queryString);
+  refreshBadge();
   const play = hash.match(/^#\/play\/(\d+)$/);
   if (play) {
     mountPlay(root, Number(play[1]), ctx, handle);
@@ -72,6 +99,10 @@ function route() {
     mountProgress(root, ctx, handle);
   } else if (hash === '#/wrong-answers') {
     mountWrongAnswers(root, ctx, handle);
+  } else if (hash === '#/feedback') {
+    mountFeedbackForm(root, ctx, handle, query);
+  } else if (hash === '#/my-feedback') {
+    mountMyFeedback(root, ctx, handle);
   } else if (hash === '#/login') {
     mountLogin(root, ctx);
   } else if (hash === '#/signup') {

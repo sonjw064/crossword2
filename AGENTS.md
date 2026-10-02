@@ -28,7 +28,9 @@
 9. 컨트롤러는 `@AuthenticationPrincipal Jwt`를 `Owner.fromJwt()`로 바꿔 쓴다(익명이면 null). 비밀번호는 BCrypt, refresh 토큰은 해시만 저장한다.
 10. 클라이언트 IP는 `request.getRemoteAddr()`만 쓰고 `X-Forwarded-For` 등을 직접 읽지 않는다(프록시 신뢰는 prod 설정의 `native` 전략과 `TRUSTED_PROXIES`로만 처리). 관리자 권한은 JWT claim만 믿지 말고 DB의 현재 role을 확인한다.
 11. 소유자(ownerType/ownerId)를 가지는 데이터 모델을 추가하면 반드시 `GuestDataMigrator` 구현체를 만들어 게스트 → 회원 이전에 포함시키고, 이전 테스트를 추가한다.
-12. 응답에 CSP(`default-src 'self'`)가 붙는다. 프론트에서 인라인 스크립트나 `style` 속성(`setAttribute('style')`)을 쓰지 말고 `element.style.setProperty`를 쓴다.
+12. 문의(`Feedback`)의 작성자용 응답에는 영어 정답 단어를 넣지 않는다(`wordId`와 한국어 뜻만). 단어 신고는 풀이 도중에 하므로 정답이 새는 경로가 된다. 새 응답을 추가할 때 테스트로 확인한다.
+13. 업로드 파일은 `ImageSanitizer`를 거쳐 재인코딩한 결과만 `AttachmentStore`(웹 루트 밖, 서버가 만든 이름)에 저장한다. 사용자가 준 파일명·Content-Type·원본 바이트를 그대로 저장하거나 서빙하지 않는다.
+14. 응답에 CSP(`default-src 'self'`)가 붙는다. 프론트에서 인라인 스크립트나 `style` 속성(`setAttribute('style')`)을 쓰지 말고 `element.style.setProperty`를 쓴다.
 
 ## 명령어
 - 빌드/테스트: `./gradlew build`
