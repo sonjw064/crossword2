@@ -31,7 +31,8 @@
 
 1. 그리드 생성과 채점은 **서버**에서 한다.
 2. 클라이언트에는 칸 구조, 번호, 한국어 힌트만 내려준다. 풀이 중에는 정답 단어를 내려주지 않는다.
-   - **정답 단어가 응답에 담기는 경우는 딱 두 가지**: (a) 해당 풀이 세션에서 맞힌 단어의 단어 카드(`GET /api/words/{id}`), (b) 사용자가 **정답 보기(포기)**를 선택해 세션이 종료된 뒤의 `reveal` 응답. 정답 보기는 정의상 정답을 보여주는 기능이므로 이 응답이 정답 공개의 유일한 경로다.
+   - **정답 단어가 응답에 담기는 경우는 딱 세 가지**: (a) 해당 풀이 세션에서 맞힌 단어의 단어 카드(`GET /api/words/{id}`), (b) 사용자가 **정답 보기(포기)**를 선택해 세션이 종료된 뒤의 `reveal` 응답, (c) **오답노트**(`GET /api/me/wrong-answers`)의 단어 카드. 정답 보기는 정의상 정답을 보여주는 기능이다.
+   - (c)는 **끝난 풀이(완료/정답 보기)에서 기록된 단어만** 담긴다. 풀이 중인 세션의 오답·힌트는 노트에 반영되지 않으므로 풀이 중에 노트를 열어 정답을 엿볼 수 없다. 노트의 단어는 이미 맞혔거나 `reveal`로 공개된 단어라서 새로 공개되는 정답은 없다.
    - 그 외 모든 응답(퍼즐 조회, 채점, 첫 글자 힌트, 정의 힌트)에는 정답 단어를 포함하지 않는다. 첫 글자 힌트는 한 글자만 공개한다.
    - `reveal`은 한 번만 가능하며 호출 즉시 세션이 `GAVE_UP`으로 종료되어 이후 채점/힌트는 불가하다(409).
 3. 그리드 생성기는 Spring과 무관한 **순수 Java 클래스**로 분리하고 seed를 받는다 (같은 입력 → 같은 결과).
@@ -142,8 +143,11 @@
 - `User`: id, email(고유, 소문자 정규화), passwordHash(BCrypt), nickname, role(USER/ADMIN), createdAt
 - `GuestAccount`: id(UUID), nickname, createdAt, migratedToUserId(nullable)
 - `RefreshToken`: tokenHash(SHA-256, 원문은 저장하지 않음), familyId, ownerType, ownerId, expiresAt, revokedAt, createdAt
-- `PlayRecord`: id, puzzleId, ownerType, ownerId, elapsedSec, hintCount, wrongCount, completedAt
-- `WrongAnswer`: id, ownerType, ownerId, wordId, count, lastAt
+- `PlayRecord`: id, sessionId(고유), puzzleId, ownerType, ownerId, status(COMPLETED/GAVE_UP), elapsedSec, hintCount, wrongCount, completedAt
+  - 소유자가 있는 풀이 세션이 끝나는 순간(완료 또는 정답 보기) 같은 트랜잭션에서 한 건 저장한다. 토큰 없는 익명 풀이는 기록하지 않는다
+- `WrongAnswer`: id, ownerType, ownerId, wordId, count, lastAt ((ownerType, ownerId, wordId) 고유)
+  - `count`는 그 단어에서 실수한 **판(세션) 수**다(한 판에서 여러 번 틀려도 1). 실수 = 틀린 적 있음 ∪ 첫 글자/정의 힌트 사용 ∪ (정답 보기로 끝난 경우) 끝까지 못 맞힌 단어
+  - 게스트 → 회원 이전 시 기록은 소유자만 바꾸고, 오답노트는 같은 단어끼리 `count`를 합산하고 `lastAt`은 더 최근 값으로 병합한다
 - `Room` (메모리 관리): code, hostId, settings, status, players
 - `MatchResult`: id, roomCode, puzzleId, mode, results, endedAt
 - `Feedback`: id, type, title, content, status, authorType, authorId, puzzleId, wordId, deviceInfo, createdAt
@@ -189,7 +193,8 @@
 - 퍼즐 생성 풀 규칙: 난이도는 "이하"(EASY=쉬움, MEDIUM=쉬움+보통, HARD=전체), 주제는 선택
 
 **학습/기록**
-- `GET /api/me/progress`, `GET /api/me/wrong-answers`
+- `GET /api/me/progress?page&pageSize`: 요약(완료·포기 수, 평균·최고 시간, 완료한 퍼즐 ID 목록)과 풀이 이력(최신순). 로그인(게스트 포함) 필요, 본인 데이터만
+- `GET /api/me/wrong-answers?page&pageSize&sort=recent|count`: 오답노트 단어 카드(영어, 뜻, 품사, 정의, 예문)와 `count`, `lastAt`. 종료된 풀이에서 기록된 단어만(3장 (c))
 - `GET /api/words/{id}` 단어 카드 (`X-Play-Session` 필요, 해당 세션에서 맞힌/공개된 단어 또는 종료된 세션의 단어만 조회 가능, 아니면 403)
 - `GET/PUT /api/me/settings` 단어 뜻 표시 설정 (끔/뜻만/뜻+정의)
 

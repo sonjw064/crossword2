@@ -2,6 +2,7 @@ import { mountSelect } from './select.js';
 import { mountPlay } from './play.js';
 import { mountResult } from './result.js';
 import { mountLogin, mountSignup } from './auth-views.js';
+import { mountProgress, mountWrongAnswers } from './progress-views.js';
 import { clear, h } from './dom.js';
 import * as auth from './auth.js';
 
@@ -11,7 +12,7 @@ const toastEl = document.getElementById('toast');
 let toastTimer;
 
 const ctx = {
-  /** 결과 화면으로 넘기는 값 (새로고침하면 사라진다 — 진도 저장은 2-3) */
+  /** 결과 화면으로 넘기는 값 (새로고침하면 사라진다) */
   shared: { result: null },
   navigate(hash) {
     if (location.hash === hash) route();
@@ -32,7 +33,9 @@ function renderNav() {
     navEl.append(h('a', { href: '#/login' }, '로그인'), h('a', { href: '#/signup' }, '회원가입'));
     return;
   }
-  navEl.append(h('span', { class: 'who' }, user.nickname, h('small', { class: 'muted' }, user.type === 'GUEST' ? ' (게스트)' : '')));
+  navEl.append(
+    h('a', { href: '#/me' }, '내 기록'), h('a', { href: '#/wrong-answers' }, '오답노트'),
+    h('span', { class: 'who' }, user.nickname, h('small', { class: 'muted' }, user.type === 'GUEST' ? ' (게스트)' : '')));
   if (user.type === 'GUEST') {
     navEl.append(h('a', { href: '#/login' }, '로그인'), h('a', { href: '#/signup' }, '회원가입'));
   }
@@ -65,6 +68,10 @@ function route() {
     mountPlay(root, Number(play[1]), ctx, handle);
   } else if (hash === '#/result' && ctx.shared.result) {
     mountResult(root, ctx, handle);
+  } else if (hash === '#/me') {
+    mountProgress(root, ctx, handle);
+  } else if (hash === '#/wrong-answers') {
+    mountWrongAnswers(root, ctx, handle);
   } else if (hash === '#/login') {
     mountLogin(root, ctx);
   } else if (hash === '#/signup') {

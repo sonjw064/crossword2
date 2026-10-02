@@ -22,6 +22,8 @@
 5. 모든 사용자 입력은 서버에서 검증하고 출력 시 이스케이프한다.
 6. 대련 중에는 정의 힌트/단어 카드 조회를 서버가 차단한다.
 7. 풀이 세션(`PlaySession`)의 상태를 바꾸는 코드는 `findForUpdate`(행 잠금)로 세션을 읽는다. 잠금 없이 읽고 수정하지 않는다.
+   잠금 순서는 항상 **계정(회원/게스트) 행 → 세션 행**이다(`AccountLock`). 게스트 이전은 게스트 계정 → 회원 계정 → 데이터 순서. 이 순서를 어기면 교착이 생긴다.
+   사용자별 기록(`PlayRecord`, `WrongAnswer`)은 풀이 종료 시 `PlayFinished` 이벤트로 같은 트랜잭션에서 남긴다.
 8. 시크릿(JWT 키, DB 비밀번호)은 코드에 쓰지 않고 환경변수로 받는다.
 9. 컨트롤러는 `@AuthenticationPrincipal Jwt`를 `Owner.fromJwt()`로 바꿔 쓴다(익명이면 null). 비밀번호는 BCrypt, refresh 토큰은 해시만 저장한다.
 10. 클라이언트 IP는 `request.getRemoteAddr()`만 쓰고 `X-Forwarded-For` 등을 직접 읽지 않는다(프록시 신뢰는 prod 설정의 `native` 전략과 `TRUSTED_PROXIES`로만 처리). 관리자 권한은 JWT claim만 믿지 말고 DB의 현재 role을 확인한다.

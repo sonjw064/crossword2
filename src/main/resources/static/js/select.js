@@ -17,6 +17,17 @@ export async function mountSelect(root, ctx, handle) {
   }
   if (handle.cancelled) return;
 
+  // 로그인(게스트 포함)했다면 이미 푼 퍼즐에 ✓ 표시를 한다 (실패해도 선택 화면은 그대로 쓸 수 있다)
+  let completed = new Set();
+  if (auth.currentUser()) {
+    try {
+      completed = new Set((await api.getProgress({ page: 0, pageSize: 1 })).summary.completedPuzzleIds);
+    } catch {
+      // 부가 정보라 무시한다
+    }
+    if (handle.cancelled) return;
+  }
+
   const listEl = h('div', { class: 'puzzle-list' });
   const countEl = h('p', { class: 'muted' });
   let puzzles = [];
@@ -67,6 +78,7 @@ export async function mountSelect(root, ctx, handle) {
       listEl.append(
         h('a', { class: 'puzzle-card', href: `#/play/${p.id}` },
           h('span', { class: `badge ${p.difficulty.toLowerCase()}` }, DIFFICULTY_LABEL[p.difficulty]),
+          completed.has(p.id) ? h('span', { class: 'done', title: '푼 퍼즐' }, '✓ 완료') : null,
           h('strong', {}, topicLabel(p.topic)),
           h('span', { class: 'muted' }, `${p.size}×${p.size} · ${p.wordCount}단어`)),
       );

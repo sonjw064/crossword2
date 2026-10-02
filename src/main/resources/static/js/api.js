@@ -38,3 +38,9 @@ export const definitionHint = (id, session, entryId) =>
 export const reveal = (id, session) => request('POST', `/api/puzzles/${id}/reveal`, { session, body: {} });
 export const wordCard = (wordId, session) => request('GET', `/api/words/${wordId}`, { session });
 export const getMe = () => request('GET', '/api/me');
+
+export const getProgress = ({ page = 0, pageSize = 20 } = {}) =>
+  request('GET', `/api/me/progress?page=${page}&pageSize=${pageSize}`);
+
+export const getWrongAnswers = ({ page = 0, pageSize = 20, sort = 'recent' } = {}) =>
+  request('GET', `/api/me/wrong-answers?page=${page}&pageSize=${pageSize}&sort=${sort}`);

@@ -11,10 +11,12 @@ import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import crossword2.auth.AccountLock;
 import crossword2.auth.Owner;
 import crossword2.common.ApiException;
 import crossword2.puzzle.PuzzleDtos.AnswerItem;
@@ -39,13 +41,17 @@ public class PlayService {
 	private final PuzzleRepository puzzleRepository;
 	private final PlaySessionRepository sessionRepository;
 	private final WordRepository wordRepository;
+	private final AccountLock accountLock;
+	private final ApplicationEventPublisher events;
 	private final Clock clock;
 
 	public PlayService(PuzzleRepository puzzleRepository, PlaySessionRepository sessionRepository,
-			WordRepository wordRepository, Clock clock) {
+			WordRepository wordRepository, AccountLock accountLock, ApplicationEventPublisher events, Clock clock) {
 		this.puzzleRepository = puzzleRepository;
 		this.sessionRepository = sessionRepository;
 		this.wordRepository = wordRepository;
+		this.accountLock = accountLock;
+		this.events = events;
 		this.clock = clock;
 	}
 
@@ -85,7 +91,7 @@ public class PlayService {
 				session.markSolved(entry.getId());
 				status = AnswerStatus.CORRECT;
 			} else {
-				session.addWrong();
+				session.addWrong(entry.getId());
 				status = AnswerStatus.WRONG;
 			}
 			results.add(new EntryResult(entry.getId(), status));
@@ -94,7 +100,7 @@ public class PlayService {
 		boolean completed = session.getSolvedEntryIds().size() == play.entries().size();
 		Long elapsed = null;
 		if (completed) {
-			session.finish(PlayStatus.COMPLETED, clock.instant());
+			finish(play, PlayStatus.COMPLETED);
 			elapsed = session.elapsedSeconds();
 		}
 		return new CheckResponse(results, completed, session.getWrongCount(), session.hintCount(), elapsed);
@@ -127,11 +133,31 @@ public class PlayService {
 	public RevealResponse reveal(Long puzzleId, String sessionHeader, Owner caller) {
 		Play play = loadActive(puzzleId, sessionHeader, caller);
 		PlaySession session = play.session();
-		session.finish(PlayStatus.GAVE_UP, clock.instant());
+		finish(play, PlayStatus.GAVE_UP);
 		List<RevealedEntry> entries = play.puzzle().getEntries().stream()
 				.map(e -> new RevealedEntry(e.getId(), cardOf(e.getWord())))
 				.toList();
 		return new RevealResponse(entries, session.getWrongCount(), session.hintCount(), session.elapsedSeconds());
+	}
+
+	/**
+	 * 세션을 끝낸다. 소유자가 있으면 {@link PlayFinished}를 발행해 기록과 오답노트를 같은 트랜잭션에서 남긴다.
+	 * 오답노트 대상: 틀린/힌트를 쓴 단어, 그리고 정답 보기로 끝났다면 끝까지 못 맞힌 단어.
+	 */
+	private void finish(Play play, PlayStatus status) {
+		PlaySession session = play.session();
+		session.finish(status, clock.instant());
+		if (!session.hasOwner()) {
+			return;
+		}
+		Set<Long> troubled = new HashSet<>(session.troubledEntryIds());
+		if (status == PlayStatus.GAVE_UP) {
+			play.entries().keySet().stream().filter(id -> !session.getSolvedEntryIds().contains(id)).forEach(troubled::add);
+		}
+		Set<Long> wordIds = troubled.stream().map(id -> play.entries().get(id).getWord().getId())
+				.collect(Collectors.toSet());
+		events.publishEvent(new PlayFinished(session.getId(), session.owner(), play.puzzle().getId(), status,
+				session.elapsedSeconds(), session.hintCount(), session.getWrongCount(), session.getFinishedAt(), wordIds));
 	}
 
 	/** 이 세션에서 맞혔거나 공개된 단어만 카드를 볼 수 있다. */
@@ -153,8 +179,14 @@ public class PlayService {
 		return cardOf(word);
 	}
 
-	/** 상태를 바꾸는 요청용: 세션 행을 잠그고 읽어, 같은 세션의 동시 요청을 하나씩 처리한다. */
+	/**
+	 * 상태를 바꾸는 요청용: 먼저 계정 행을, 그 다음 세션 행을 잠근다(잠금 순서 계정 → 세션).
+	 * 같은 사용자의 기록 갱신과 같은 세션의 동시 요청을 하나씩 처리한다.
+	 */
 	private Play loadActive(Long puzzleId, String sessionHeader, Owner caller) {
+		if (caller != null) {
+			accountLock.lock(caller);
+		}
 		PlaySession session = findSession(sessionHeader, true, caller);
 		if (!session.getPuzzle().getId().equals(puzzleId)) {
 			throw new ApiException(HttpStatus.BAD_REQUEST, "SESSION_MISMATCH", "session belongs to another puzzle");

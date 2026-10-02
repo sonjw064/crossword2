@@ -1,4 +1,5 @@
 import { h } from './dom.js';
+import * as auth from './auth.js';
 import { DIFFICULTY_LABEL, DIRECTION_LABEL, POS_LABEL, formatTime, topicLabel } from './labels.js';
 
 export function mountResult(root, ctx) {
@@ -14,6 +15,8 @@ export function mountResult(root, ctx) {
         `${DIFFICULTY_LABEL[r.puzzle.difficulty]} · ${topicLabel(r.puzzle.topic)} · ${r.puzzle.size}×${r.puzzle.size}`),
       h('div', { class: 'stats-row' },
         stat('걸린 시간', formatTime(r.elapsedSec)), stat('힌트', `${r.hintCount}번`), stat('오답', `${r.wrongCount}번`)),
+      auth.currentUser() ? null : h('p', { class: 'guest-banner' },
+        '기록이 저장되지 않았어요. 닉네임만 정하면(게스트) 다음부터 기록과 오답노트가 남아요. ', h('a', { href: '#/' }, '시작하기')),
       h('div', { class: 'actions' },
         h('a', { class: 'button primary', href: `#/play/${r.puzzle.id}` }, '다시 풀기'),
         h('a', { class: 'button', href: '#/' }, '다른 퍼즐')),

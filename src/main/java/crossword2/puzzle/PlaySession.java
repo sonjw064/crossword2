@@ -62,6 +62,12 @@ public class PlaySession {
 	@Column(name = "entry_id")
 	private Set<Long> solvedEntryIds = new HashSet<>();
 
+	/** 한 번이라도 틀린 항목(오답노트용). 오답 횟수({@code wrongCount})와 별개로 항목을 구분한다. */
+	@ElementCollection
+	@CollectionTable(name = "play_session_wrong_entries", joinColumns = @JoinColumn(name = "session_id"))
+	@Column(name = "entry_id")
+	private Set<Long> wrongEntryIds = new HashSet<>();
+
 	@ElementCollection
 	@CollectionTable(name = "play_session_letter_hints", joinColumns = @JoinColumn(name = "session_id"))
 	@Column(name = "entry_id")
@@ -101,8 +107,21 @@ public class PlaySession {
 		solvedEntryIds.add(entryId);
 	}
 
-	public void addWrong() {
+	public void addWrong(Long entryId) {
 		wrongCount++;
+		wrongEntryIds.add(entryId);
+	}
+
+	/** 틀렸거나 힌트(첫 글자/정의)를 쓴 항목 — 오답노트 후보. */
+	public Set<Long> troubledEntryIds() {
+		Set<Long> ids = new HashSet<>(wrongEntryIds);
+		ids.addAll(letterHintEntryIds);
+		ids.addAll(definitionHintEntryIds);
+		return ids;
+	}
+
+	public Owner owner() {
+		return ownerType == null ? null : new Owner(ownerType, ownerId);
 	}
 
 	/** @return 이번에 새로 집계되었으면 true */

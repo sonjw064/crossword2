@@ -16,13 +16,15 @@ import crossword2.common.ApiException;
 public class GuestMigrationService {
 
 	private final GuestAccountRepository guests;
+	private final UserRepository users;
 	private final RefreshTokenRepository refreshTokens;
 	private final List<GuestDataMigrator> migrators;
 	private final Clock clock;
 
-	public GuestMigrationService(GuestAccountRepository guests, RefreshTokenRepository refreshTokens,
-			List<GuestDataMigrator> migrators, Clock clock) {
+	public GuestMigrationService(GuestAccountRepository guests, UserRepository users,
+			RefreshTokenRepository refreshTokens, List<GuestDataMigrator> migrators, Clock clock) {
 		this.guests = guests;
+		this.users = users;
 		this.refreshTokens = refreshTokens;
 		this.migrators = migrators;
 		this.clock = clock;
@@ -60,6 +62,7 @@ public class GuestMigrationService {
 			throw new ApiException(HttpStatus.CONFLICT, "GUEST_ALREADY_MIGRATED",
 					"this guest has already been migrated to a member");
 		}
+		users.findForUpdate(userId); // 회원의 기록 갱신(풀이 종료 등)과 직렬화한다. 잠금 순서: 게스트 계정 → 회원 계정 → 데이터
 		guest.markMigrated(userId);
 		Owner from = new Owner(OwnerType.GUEST, guestId.toString());
 		Owner to = new Owner(OwnerType.MEMBER, String.valueOf(userId));
