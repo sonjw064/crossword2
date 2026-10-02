@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import crossword2.common.ApiException;
 import crossword2.puzzle.PuzzleDtos.EntryView;
+import crossword2.puzzle.PuzzleDtos.PuzzleOptions;
 import crossword2.puzzle.PuzzleDtos.PuzzlePage;
 import crossword2.puzzle.PuzzleDtos.PuzzleSummary;
 import crossword2.puzzle.PuzzleDtos.PuzzleView;
@@ -51,12 +52,18 @@ public class PuzzleService {
 		return new PuzzlePage(items, result.getNumber(), result.getSize(), result.getTotalElements());
 	}
 
+	public PuzzleOptions options() {
+		return new PuzzleOptions(puzzleRepository.findDistinctDifficulties().stream().sorted().toList(),
+				puzzleRepository.findDistinctTopics(),
+				puzzleRepository.findDistinctSizes());
+	}
+
 	/** 칸 구조와 한국어 힌트만 돌려준다. 정답 단어와 정의는 포함하지 않는다. */
 	public PuzzleView detail(Long id) {
 		Puzzle puzzle = puzzleRepository.findWithEntriesById(id)
 				.orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "PUZZLE_NOT_FOUND", "puzzle not found"));
 		List<EntryView> entries = puzzle.getEntries().stream()
-				.map(e -> new EntryView(e.getId(), e.getNumber(), e.getDirection(), e.getStartRow(), e.getStartCol(),
+				.map(e -> new EntryView(e.getId(), e.getWord().getId(), e.getNumber(), e.getDirection(), e.getStartRow(), e.getStartCol(),
 						e.getWord().getEnglish().length(), e.getWord().getKorean(), e.getWord().getPartOfSpeech()))
 				.toList();
 		return new PuzzleView(puzzle.getId(), puzzle.getSize(), puzzle.getDifficulty(), puzzle.getTopic(),

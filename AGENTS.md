@@ -9,7 +9,7 @@
 - 루트 패키지: `crossword2`
 - DB: PostgreSQL (개발 초기 H2 허용), Spring Data JPA
 - 인증: Spring Security + JWT / 실시간: Spring WebSocket + STOMP
-- 프론트: HTML/CSS/JS (`src/main/resources/static`, API만 호출)
+- 프론트: HTML/CSS/JS (`src/main/resources/static`, 프레임워크·빌드 없음, API만 호출). 서버에서 온 문자열은 `textContent`로만 넣고 `innerHTML`은 쓰지 않는다. 화면과 무관한 로직은 `js/grid-model.js`에 순수 함수로 둔다.
 - 테스트: JUnit 5, Mockito, Spring Boot Test
 
 ## 핵심 규칙
@@ -27,6 +27,7 @@
 ## 명령어
 - 빌드/테스트: `./gradlew build`
 - 테스트만: `./gradlew test`
+- 프론트 순수 로직 테스트: `node --test "src/test/js/*.test.mjs"` (Node 22+, npm 의존성 없음, Gradle 빌드와는 별개)
 - 실행: `./gradlew bootRun` (기본 H2, 운영은 `--spring.profiles.active=prod` + `DB_URL`/`DB_USERNAME`/`DB_PASSWORD`)
 
 ## 코드 스타일

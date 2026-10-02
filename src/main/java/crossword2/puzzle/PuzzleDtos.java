@@ -30,8 +30,12 @@ public final class PuzzleDtos {
 			List<String> grid, List<EntryView> entries) {
 	}
 
-	public record EntryView(Long id, int number, Direction direction, int row, int col, int length, String clue,
+	public record EntryView(Long id, Long wordId, int number, Direction direction, int row, int col, int length, String clue,
 			PartOfSpeech partOfSpeech) {
+	}
+
+	/** 퍼즐 선택 화면에 보여줄 선택지. 실제로 존재하는 퍼즐에서 뽑는다. */
+	public record PuzzleOptions(List<Difficulty> difficulties, List<String> topics, List<Integer> sizes) {
 	}
 
 	public record StartResponse(UUID sessionId, Long puzzleId, Instant startedAt) {

@@ -156,7 +156,8 @@
 - `POST /api/auth/signup`, `POST /api/auth/login` (게스트 ID 포함 시 기록 이전)
 
 **퍼즐** (풀이 관련 요청은 `X-Play-Session` 헤더에 세션 ID를 담는다)
-- `GET /api/puzzles?difficulty&topic&size&page&pageSize` 목록, `GET /api/puzzles/{id}` 구조와 한국어 힌트만 반환 (`grid`: '.'=입력 칸, '#'=막힌 칸)
+- `GET /api/puzzles/options` 선택 가능한 난이도/주제/크기 (실제 존재하는 퍼즐 기준)
+- `GET /api/puzzles?difficulty&topic&size&page&pageSize` 목록, `GET /api/puzzles/{id}` 구조와 한국어 힌트만 반환 (`grid`: '.'=입력 칸, '#'=막힌 칸, 항목에 `wordId` 포함 — 단어 카드 조회용이며 정답은 아님)
 - `POST /api/puzzles/{id}/start` 풀이 세션 생성 → `sessionId`
 - `POST /api/puzzles/{id}/check` 채점 (항목별 CORRECT/WRONG/INCOMPLETE, 글자 수가 같은 오답만 오답 수 집계, 한 요청에 같은 `entryId`가 중복되면 400 `DUPLICATE_ENTRY`)
 - `POST /api/puzzles/{id}/hint` (첫 글자 공개), `POST /api/puzzles/{id}/reveal` (정답 보기 = 포기, 세션 종료, 전체 정답과 단어 카드 반환 — 3장 정책 참고)

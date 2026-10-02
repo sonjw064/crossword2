@@ -14,6 +14,7 @@ import crossword2.puzzle.PuzzleDtos.CheckResponse;
 import crossword2.puzzle.PuzzleDtos.DefinitionHintResponse;
 import crossword2.puzzle.PuzzleDtos.EntryRequest;
 import crossword2.puzzle.PuzzleDtos.HintResponse;
+import crossword2.puzzle.PuzzleDtos.PuzzleOptions;
 import crossword2.puzzle.PuzzleDtos.PuzzlePage;
 import crossword2.puzzle.PuzzleDtos.PuzzleView;
 import crossword2.puzzle.PuzzleDtos.RevealResponse;
@@ -40,6 +41,11 @@ public class PuzzleController {
 			@RequestParam(required = false) String topic, @RequestParam(required = false) Integer size,
 			@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int pageSize) {
 		return puzzleService.list(difficulty, topic, size, page, pageSize);
+	}
+
+	@GetMapping("/options")
+	public PuzzleOptions options() {
+		return puzzleService.options();
 	}
 
 	@GetMapping("/{id}")

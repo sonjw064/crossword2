@@ -101,6 +101,35 @@ class PuzzleApiTest {
 	}
 
 	@Test
+	void optionsListsWhatActuallyExists() throws Exception {
+		String body = mvc.perform(get("/api/puzzles/options")).andExpect(status().isOk())
+				.andReturn().getResponse().getContentAsString();
+
+		List<String> difficulties = JsonPath.read(body, "$.difficulties");
+		List<String> topics = JsonPath.read(body, "$.topics");
+		List<Integer> sizes = JsonPath.read(body, "$.sizes");
+		assertThat(difficulties).containsExactly("EASY", "MEDIUM", "HARD");
+		assertThat(topics).contains("animals", "food").doesNotContainNull().doesNotHaveDuplicates();
+		assertThat(sizes).contains(7, 10);
+	}
+
+	@Test
+	void entriesExposeWordIdForCardLookupButNotTheWord() throws Exception {
+		Puzzle puzzle = somePuzzle();
+		PuzzleEntry first = puzzle.getEntries().get(0);
+		String session = startSession(puzzle.getId());
+
+		String body = mvc.perform(get("/api/puzzles/{id}", puzzle.getId())).andExpect(status().isOk())
+				.andExpect(jsonPath("$.entries[0].wordId").value(first.getWord().getId().intValue()))
+				.andReturn().getResponse().getContentAsString();
+		assertThat(body).doesNotContain("\"english\"");
+
+		// wordId를 알아도 맞히기 전에는 카드를 볼 수 없다
+		mvc.perform(get("/api/words/{id}", first.getWord().getId()).header(SESSION, session))
+				.andExpect(status().isForbidden());
+	}
+
+	@Test
 	void unknownPuzzleIs404() throws Exception {
 		mvc.perform(get("/api/puzzles/{id}", 999_999)).andExpect(status().isNotFound())
 				.andExpect(jsonPath("$.code").value("PUZZLE_NOT_FOUND"));

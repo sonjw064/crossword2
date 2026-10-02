@@ -17,7 +17,7 @@ public class SecurityConfig {
 			.csrf(csrf -> csrf.ignoringRequestMatchers("/api/**"))
 			.authorizeHttpRequests(auth -> auth
 				.requestMatchers("/api/**").permitAll()
-				.requestMatchers(HttpMethod.GET, "/", "/index.html").permitAll()
+				.requestMatchers(HttpMethod.GET, "/", "/index.html", "/favicon.ico", "/css/**", "/js/**").permitAll()
 				.anyRequest().denyAll())
 			.httpBasic(Customizer.withDefaults());
 		return http.build();
