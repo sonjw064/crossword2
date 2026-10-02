@@ -46,7 +46,7 @@ public class ApiExceptionHandler {
 
 	@ExceptionHandler(MaxUploadSizeExceededException.class)
 	ResponseEntity<ErrorResponse> handleTooLarge(MaxUploadSizeExceededException e) {
-		return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE)
+		return ResponseEntity.status(HttpStatus.CONTENT_TOO_LARGE)
 				.body(new ErrorResponse("ATTACHMENT_TOO_LARGE", "the upload is too large"));
 	}
 

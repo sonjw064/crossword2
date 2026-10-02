@@ -59,7 +59,11 @@ public class PlayService {
 	private record Play(PlaySession session, Puzzle puzzle, Map<Long, PuzzleEntry> entries) {
 	}
 
+	/** 소유자가 있으면 계정을 먼저 잠그고 쓸 수 있는 계정인지 확인한 뒤 세션을 만든다(게스트 이전과 경쟁해도 고아 세션이 생기지 않는다). */
 	public StartResponse start(Long puzzleId, Owner caller) {
+		if (caller != null) {
+			accountLock.lockActive(caller);
+		}
 		Puzzle puzzle = puzzleRepository.findById(puzzleId).orElseThrow(PlayService::puzzleNotFound);
 		PlaySession session = sessionRepository.save(new PlaySession(puzzle, clock.instant(), caller));
 		return new StartResponse(session.getId(), puzzle.getId(), session.getStartedAt());

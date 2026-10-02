@@ -19,8 +19,8 @@ class AttachmentStoreTest {
 	Path temp;
 
 	private AttachmentStore store(Path dir) {
-		return new AttachmentStore(new FeedbackProperties(dir.toString(), 2_097_152, 4096, 12_000_000,
-				Duration.ofDays(90), 5, 10));
+		return new AttachmentStore(new FeedbackProperties(dir.toString(), 2_097_152, 4096, 8_500_000,
+				Duration.ofDays(90), 5, 10, 2, Duration.ofSeconds(3), 200));
 	}
 
 	@Test

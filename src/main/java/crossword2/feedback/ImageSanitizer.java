@@ -95,15 +95,20 @@ final class ImageSanitizer {
 	}
 
 	private static Sanitized encodeJpeg(BufferedImage image) throws IOException {
-		// JPEG는 투명도가 없으므로 흰 배경의 RGB로 그린 뒤 인코딩한다
-		BufferedImage rgb = new BufferedImage(image.getWidth(), image.getHeight(), BufferedImage.TYPE_INT_RGB);
-		Graphics2D g = rgb.createGraphics();
-		try {
-			g.setColor(Color.WHITE);
-			g.fillRect(0, 0, rgb.getWidth(), rgb.getHeight());
-			g.drawImage(image, 0, 0, null);
-		} finally {
-			g.dispose();
+		BufferedImage rgb = image;
+		boolean plainRgb = !image.getColorModel().hasAlpha()
+				&& (image.getType() == BufferedImage.TYPE_3BYTE_BGR || image.getType() == BufferedImage.TYPE_INT_RGB);
+		if (!plainRgb) {
+			// JPEG는 투명도가 없으므로 흰 배경의 RGB로 그린 뒤 인코딩한다. 이미 RGB면 복사본(메모리)을 만들지 않는다.
+			rgb = new BufferedImage(image.getWidth(), image.getHeight(), BufferedImage.TYPE_INT_RGB);
+			Graphics2D g = rgb.createGraphics();
+			try {
+				g.setColor(Color.WHITE);
+				g.fillRect(0, 0, rgb.getWidth(), rgb.getHeight());
+				g.drawImage(image, 0, 0, null);
+			} finally {
+				g.dispose();
+			}
 		}
 		ImageWriter writer = ImageIO.getImageWritersByFormatName("jpeg").next();
 		try (ByteArrayOutputStream out = new ByteArrayOutputStream();

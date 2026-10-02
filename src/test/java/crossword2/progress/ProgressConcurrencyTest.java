@@ -47,6 +47,9 @@ class ProgressConcurrencyTest {
 	@Autowired
 	WrongAnswerRepository wrongAnswers;
 
+	@Autowired
+	crossword2.puzzle.PlaySessionRepository sessions;
+
 	PlayTestHelper play;
 	Puzzle puzzle;
 	List<PuzzleEntry> entries;
@@ -104,6 +107,36 @@ class ProgressConcurrencyTest {
 					.satisfies(w -> assertThat(w.getCount()).isEqualTo(2));
 			assertThat(records.findByOwnerTypeAndOwnerId(owner.type(), owner.id(), Pageable.unpaged()).getTotalElements())
 					.isEqualTo(2);
+		}
+	}
+
+	@Test
+	void startingASessionWhileTheGuestIsBeingMigratedNeverLeavesAGuestOwnedSession() throws Exception {
+		for (int round = 0; round < 8; round++) {
+			Tokens guest = AuthTestClient.guest(mvc, "시작경쟁" + round);
+			String email = "st" + UUID.randomUUID().toString().substring(0, 8) + "@example.com";
+
+			List<MockHttpServletResponse> responses = runTogether(List.of(
+					() -> mvc.perform(post("/api/puzzles/{id}/start", puzzle.getId()).header("Authorization", guest.bearer()))
+							.andReturn().getResponse(),
+					() -> mvc.perform(post("/api/auth/signup").contentType(MediaType.APPLICATION_JSON)
+							.header("Authorization", guest.bearer())
+							.content("{\"email\":\"" + email + "\",\"password\":\"secret123\",\"nickname\":\"시작경쟁\",\"guestId\":\""
+									+ guest.ownerId() + "\"}")).andReturn().getResponse()));
+
+			MockHttpServletResponse start = responses.get(0);
+			MockHttpServletResponse signup = responses.get(1);
+			assertThat(signup.getStatus()).as("round %d signup: %s", round, signup.getContentAsString()).isEqualTo(201);
+			assertThat(start.getStatus()).as("round %d start: %s", round, start.getContentAsString()).isIn(200, 401);
+			Owner guestOwner = new Owner(OwnerType.GUEST, guest.ownerId());
+			assertThat(sessions.findAll().stream().filter(s -> s.isOwnedBy(guestOwner)))
+					.as("round %d: 이전 뒤에 게스트 소유로 남은 세션이 없어야 한다", round).isEmpty();
+			if (start.getStatus() == 200) {
+				String memberId = com.jayway.jsonpath.JsonPath.read(signup.getContentAsString(), "$.ownerId");
+				UUID created = UUID.fromString(com.jayway.jsonpath.JsonPath.read(start.getContentAsString(), "$.sessionId"));
+				assertThat(sessions.findById(created).orElseThrow().isOwnedBy(new Owner(OwnerType.MEMBER, memberId)))
+						.as("round %d: 시작된 세션은 회원 소유여야 한다", round).isTrue();
+			}
 		}
 	}
 

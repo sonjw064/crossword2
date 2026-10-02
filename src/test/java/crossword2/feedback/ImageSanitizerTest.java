@@ -153,6 +153,25 @@ class ImageSanitizerTest {
 	}
 
 	@Test
+	void theDefaultPixelBudgetStopsJustAboveFourKUhd() {
+		// 4096x2100 = 약 860만 픽셀: 각 변은 한도 안이지만 기본 픽셀 예산(850만)을 넘어 디코딩 전에 거부된다
+		assertThatThrownBy(() -> ImageSanitizer.sanitize(TestImages.pngClaiming(4096, 2100), 4096, 8_500_000))
+				.isInstanceOfSatisfying(ApiException.class, e -> assertThat(e.getMessage()).contains("too large"));
+		// 3840x2160(4K UHD)은 예산 안이라 디코딩까지 진행한다(이 입력은 픽셀 데이터가 없는 가짜라 손상 이미지로 거부)
+		assertThatThrownBy(() -> ImageSanitizer.sanitize(TestImages.pngClaiming(3840, 2160), 4096, 8_500_000))
+				.isInstanceOfSatisfying(ApiException.class, e -> assertThat(e.getMessage()).doesNotContain("too large"));
+	}
+
+	@Test
+	void jpegWithoutAlphaIsEncodedWithoutAnExtraRgbCopy() {
+		// 결과가 올바른지만 확인한다(복사본을 만들지 않는 경로: ImageIO가 읽은 3BYTE_BGR을 그대로 인코딩)
+		Sanitized result = sanitize(TestImages.jpeg(120, 80));
+
+		assertThat(result.contentType()).isEqualTo("image/jpeg");
+		assertThat(result.bytes()).isNotEmpty();
+	}
+
+	@Test
 	void rejectsADimensionOverTheLimit() {
 		assertRejected(TestImages.pngClaiming(MAX_DIM + 1, 10));
 	}

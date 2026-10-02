@@ -23,7 +23,7 @@ class StaticResourcesTest {
 	@ValueSource(strings = { "/", "/index.html", "/css/style.css", "/js/app.js", "/js/api.js", "/js/grid-model.js",
 			"/js/select.js", "/js/play.js", "/js/result.js", "/js/http.js", "/js/auth.js", "/js/auth-views.js",
 			"/js/progress-views.js", "/js/review-model.js", "/js/labels.js", "/js/dom.js", "/js/settings.js",
-			"/js/feedback-model.js", "/js/feedback-views.js" })
+			"/js/feedback-model.js", "/js/feedback-views.js", "/js/lifecycle.js" })
 	void frontendFilesAreServedWithoutLogin(String path) throws Exception {
 		mvc.perform(get(path)).andExpect(status().isOk());
 	}

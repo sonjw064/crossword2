@@ -18,6 +18,7 @@
 - 4단계 배포: `UPLOAD_DIR`은 웹 루트 밖의 쓰기 가능한 폴더이며 백업 대상에 포함하고, Nginx 요청 본문 크기 제한을 3MB 이상으로 설정
 - 선택: 문의 첨부에 WEBP 지원이 필요하면 WEBP ImageIO 플러그인 도입 후 `ImageSanitizer` 확장
 - 4단계(운영): 게스트 데이터 보관 기간 정책(SPEC 9장) — 비활성 게스트와 그 기록/오답노트의 보관 기간을 정해 정리 작업 추가
+- 4단계 배포 전: PostgreSQL에서 동시성 테스트(게스트 이전 ↔ 세션 시작/종료/문의 작성/익명화) 반복 실행으로 H2에서 재현되지 않는 경쟁을 확인
 - 확장: 서버가 여러 대가 되면 RateLimiter를 Redis로 이전
 - 4단계 배포: Nginx가 `X-Forwarded-For`에 실제 접속 주소를 넣고(`proxy_set_header X-Forwarded-For $remote_addr;`), 앱 포트(8080)는 외부에 열지 않으며, Docker 네트워크라면 `TRUSTED_PROXIES`에 프록시 주소 정규식을 설정
 - 입력 중인 칸 상태는 서버에 저장하지 않아 새로고침하면 새 세션으로 시작함(진도 저장은 '끝난 풀이'만 대상)

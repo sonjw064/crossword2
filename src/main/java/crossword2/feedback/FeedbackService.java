@@ -8,7 +8,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -20,8 +19,7 @@ import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
 
-import crossword2.auth.GuestAccount;
-import crossword2.auth.GuestAccountRepository;
+import crossword2.auth.AccountLock;
 import crossword2.auth.Owner;
 import crossword2.auth.OwnerType;
 import crossword2.auth.RateLimiter;
@@ -56,13 +54,14 @@ public class FeedbackService {
 	private final RateLimiter rateLimiter;
 	private final PuzzleRepository puzzles;
 	private final WordRepository words;
-	private final GuestAccountRepository guests;
+	private final AccountLock accountLock;
+	private final ImageGate imageGate;
 	private final Clock clock;
 
 	public FeedbackService(FeedbackRepository feedbacks, FeedbackReplyRepository replies,
 			FeedbackAttachmentRepository attachments, AttachmentStore store, FeedbackProperties props,
-			RateLimiter rateLimiter, PuzzleRepository puzzles, WordRepository words, GuestAccountRepository guests,
-			Clock clock) {
+			RateLimiter rateLimiter, PuzzleRepository puzzles, WordRepository words, AccountLock accountLock,
+			ImageGate imageGate, Clock clock) {
 		this.feedbacks = feedbacks;
 		this.replies = replies;
 		this.attachments = attachments;
@@ -71,7 +70,8 @@ public class FeedbackService {
 		this.rateLimiter = rateLimiter;
 		this.puzzles = puzzles;
 		this.words = words;
-		this.guests = guests;
+		this.accountLock = accountLock;
+		this.imageGate = imageGate;
 		this.clock = clock;
 	}
 
@@ -86,7 +86,7 @@ public class FeedbackService {
 			String userAgent, String clientIp) {
 		rateLimiter.check("feedback-owner:" + owner.type() + ":" + owner.id(), props.perOwnerPerHour(), HOUR);
 		rateLimiter.check("feedback-ip:" + clientIp, props.perIpPerHour(), HOUR);
-		requireActiveAccount(owner);
+		accountLock.lockActive(owner);
 
 		boolean quickReport = request.wordId() != null;
 		Word word = null;
@@ -147,25 +147,15 @@ public class FeedbackService {
 
 	private ImageSanitizer.Sanitized sanitize(MultipartFile file) {
 		if (file.getSize() > props.maxAttachmentBytes()) {
-			throw new ApiException(HttpStatus.PAYLOAD_TOO_LARGE, "ATTACHMENT_TOO_LARGE",
+			throw new ApiException(HttpStatus.CONTENT_TOO_LARGE, "ATTACHMENT_TOO_LARGE",
 					"the screenshot must be at most " + props.maxAttachmentBytes() / 1024 / 1024 + "MB");
 		}
 		try {
-			return ImageSanitizer.sanitize(file.getBytes(), props.maxImageDimension(), props.maxImagePixels());
+			byte[] bytes = file.getBytes();
+			// 디코딩은 메모리를 많이 쓰므로 동시에 처리하는 수를 제한한다
+			return imageGate.run(() -> ImageSanitizer.sanitize(bytes, props.maxImageDimension(), props.maxImagePixels()));
 		} catch (IOException e) {
 			throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_ATTACHMENT", "the upload could not be read");
-		}
-	}
-
-	/** 게스트가 이미 회원으로 이전됐다면 새 문의를 받지 않는다(이전 후 주인 없는 문의가 생기는 경쟁 방지). */
-	private void requireActiveAccount(Owner owner) {
-		if (owner.type() != OwnerType.GUEST) {
-			return;
-		}
-		GuestAccount guest = guests.findForUpdate(UUID.fromString(owner.id()))
-				.orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "ACCOUNT_NOT_FOUND", "account no longer exists"));
-		if (guest.getMigratedToUserId() != null) {
-			throw new ApiException(HttpStatus.UNAUTHORIZED, "GUEST_MIGRATED", "this guest has been migrated to a member");
 		}
 	}
 

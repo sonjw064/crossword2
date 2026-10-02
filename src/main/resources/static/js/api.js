@@ -58,12 +58,12 @@ export const getMyFeedback = () => request('GET', '/api/feedback/mine');
 export const getUnreadCount = () => request('GET', '/api/feedback/unread-count');
 export const markReplyRead = (replyId) => request('PATCH', `/api/feedback/replies/${replyId}/read`);
 
-/** 첨부는 인증이 필요해 <img src>로 직접 못 쓰므로 받아서 object URL로 만든다. */
-export async function getAttachmentUrl(feedbackId) {
+/** 첨부는 인증이 필요해 <img src>로 직접 못 쓰므로 Blob으로 받는다(object URL은 화면이 만들고 해제한다). */
+export async function getAttachmentBlob(feedbackId) {
   const token = await auth.getAccessToken();
   const response = await fetch(`/api/feedback/${feedbackId}/attachment`, {
     headers: token ? { Authorization: `Bearer ${token}` } : {},
   });
   if (!response.ok) throw new ApiError(response.status, 'ATTACHMENT_NOT_FOUND', '스크린샷을 불러올 수 없어요.');
-  return URL.createObjectURL(await response.blob());
+  return response.blob();
 }

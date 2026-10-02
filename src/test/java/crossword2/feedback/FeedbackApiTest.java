@@ -484,7 +484,7 @@ class FeedbackApiTest {
 		System.arraycopy(TestImages.png(10, 10), 0, huge, 0, 20);
 
 		postMultipart(guest, json("BUG", "제목", "내용"), shot("big.png", "image/png", huge))
-				.andExpect(status().isPayloadTooLarge()).andExpect(jsonPath("$.code").value("ATTACHMENT_TOO_LARGE"));
+				.andExpect(status().isContentTooLarge()).andExpect(jsonPath("$.code").value("ATTACHMENT_TOO_LARGE"));
 	}
 
 	@Test

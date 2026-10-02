@@ -183,7 +183,7 @@
 **퍼즐** (풀이 관련 요청은 `X-Play-Session` 헤더에 세션 ID를 담는다)
 - `GET /api/puzzles/options` 선택 가능한 난이도/주제/크기 (실제 존재하는 퍼즐 기준)
 - `GET /api/puzzles?difficulty&topic&size&page&pageSize` 목록, `GET /api/puzzles/{id}` 구조와 한국어 힌트만 반환 (`grid`: '.'=입력 칸, '#'=막힌 칸, 항목에 `wordId` 포함 — 단어 카드 조회용이며 정답은 아님)
-- `POST /api/puzzles/{id}/start` 풀이 세션 생성 → `sessionId`
+- `POST /api/puzzles/{id}/start` 풀이 세션 생성 → `sessionId` (토큰이 있으면 계정을 먼저 잠그고 확인한다: 이전된 게스트 401 `GUEST_MIGRATED`, 없는 계정 401 `ACCOUNT_NOT_FOUND`)
 - `POST /api/puzzles/{id}/check` 채점 (항목별 CORRECT/WRONG/INCOMPLETE, 글자 수가 같은 오답만 오답 수 집계, 한 요청에 같은 `entryId`가 중복되면 400 `DUPLICATE_ENTRY`)
 - `POST /api/puzzles/{id}/hint` (첫 글자 공개), `POST /api/puzzles/{id}/reveal` (정답 보기 = 포기, 세션 종료, 전체 정답과 단어 카드 반환 — 3장 정책 참고)
 - `POST /api/puzzles/{id}/definition-hint` 정의 힌트 (솔로 전용, 대련 퍼즐은 403 — 대련 구현 시 적용)
@@ -212,8 +212,10 @@
 - `PATCH /api/feedback/replies/{id}/read`: 본인 문의의 답변만 읽음 처리(`readAt`은 처음 한 번만 기록). 남의 답변과 없는 답변은 모두 404
 - `GET /api/feedback/{id}/attachment`: 작성자 본인만(아니면 404). 저장된 Content-Type, `nosniff`, `CSP: sandbox`, `no-store`로 내려준다
 - **작성자 응답에는 영어 정답 단어를 넣지 않는다**: 단어 신고는 풀이 도중에도 하므로 응답과 내 문의 내역에는 `wordId`와 한국어 뜻(`wordKorean`)만 준다
-- **스크린샷 정책**: PNG/JPEG만, 2MB 이하, 가로·세로 4096px 이하·1,200만 픽셀 이하. 확장자/Content-Type이 아니라 파일 앞부분(magic bytes)으로 판별하고, 디코딩 전에 크기를 확인해 압축 폭탄을 거부하며, **서버가 픽셀만 다시 인코딩**해 저장해 EXIF(위치 등)와 이미지 뒤에 덧붙인 데이터를 제거한다. 사용자가 지은 파일명은 쓰지 않고 웹 루트 밖(`app.feedback.upload-dir`, 운영은 `UPLOAD_DIR`)에 임의 UUID 이름으로 저장하며 정적으로 서빙하지 않는다. 거부된 첨부가 있는 문의는 저장되지 않는다
-- **게스트 문의 보관**: 게스트가 쓴 문의는 90일(`app.feedback.guest-retention`)이 지나면 매일 새벽 3:40에 익명화한다(작성자 ID·기기 정보·첨부 삭제, 제목/내용은 통계를 위해 유지). 회원이 쓴 문의와 회원으로 이전된 문의는 대상이 아니다
+- **스크린샷 정책**: PNG/JPEG만, 2MB 이하, 가로·세로 4096px 이하·850만 픽셀 이하(4K UHD까지, 동시에 처리하는 이미지 수는 2개로 제한하고 초과하면 503 `SERVER_BUSY`). 확장자/Content-Type이 아니라 파일 앞부분(magic bytes)으로 판별하고, 디코딩 전에 크기를 확인해 압축 폭탄을 거부하며, **서버가 픽셀만 다시 인코딩**해 저장해 EXIF(위치 등)와 이미지 뒤에 덧붙인 데이터를 제거한다. 사용자가 지은 파일명은 쓰지 않고 웹 루트 밖(`app.feedback.upload-dir`, 운영은 `UPLOAD_DIR`)에 임의 UUID 이름으로 저장하며 정적으로 서빙하지 않는다. 거부된 첨부가 있는 문의는 저장되지 않는다
+- **게스트 문의 보관**: 게스트가 쓴 문의는 90일(`app.feedback.guest-retention`)이 지나면 매일 새벽 3:40에 익명화한다(작성자 ID·기기 정보 삭제, 제목/내용은 통계를 위해 유지, 첨부는 삭제 대기로 표시). 회원이 쓴 문의와 회원으로 이전된 문의는 대상이 아니다
+  - 작은 묶음(`retention-batch-size`, 기본 200건)마다 따로 커밋한다. "실행 시점에도 여전히 게스트 소유이고 기간이 지난 행만" 바꾸는 조건부 일괄 UPDATE를 쓰므로, 게스트 이전과 경쟁해도 회원에게 이전된 문의는 익명화되지 않는다
+  - 첨부 행은 **파일이 실제로 지워진 뒤에만** 삭제한다. 파일 삭제가 실패하면 행이 남아 다음 실행에서 다시 시도하고, 한 파일의 실패가 다른 파일 삭제를 막지 않는다
 - `GET /api/admin/feedback`, `PATCH /api/admin/feedback/{id}`, `POST /api/admin/feedback/{id}/reply`
 
 **관리자**

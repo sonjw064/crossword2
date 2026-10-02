@@ -1,5 +1,7 @@
 package crossword2.feedback;
 
+import java.time.Instant;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -28,6 +30,9 @@ public class FeedbackAttachment {
 	@Column(nullable = false)
 	private long size;
 
+	/** 파일을 지워야 한다는 표시(익명화 등). 파일이 실제로 지워진 뒤에야 행을 삭제하므로 실패해도 다시 시도할 수 있다. */
+	private Instant deleteRequestedAt;
+
 	protected FeedbackAttachment() {
 	}
 
@@ -36,6 +41,16 @@ public class FeedbackAttachment {
 		this.storedName = storedName;
 		this.contentType = contentType;
 		this.size = size;
+	}
+
+	public void requestDeletion(Instant now) {
+		if (deleteRequestedAt == null) {
+			deleteRequestedAt = now;
+		}
+	}
+
+	public Instant getDeleteRequestedAt() {
+		return deleteRequestedAt;
 	}
 
 	public Long getId() {

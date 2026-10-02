@@ -2,6 +2,7 @@ import { h, clear } from './dom.js';
 import * as api from './api.js';
 import * as auth from './auth.js';
 import { formatDateTime } from './labels.js';
+import { createObjectUrlTracker } from './lifecycle.js';
 import {
   LIMITS, REASONS, STATUS_LABEL, TYPES, labelOf, screenInfo, validateFeedback,
 } from './feedback-model.js';
@@ -141,10 +142,13 @@ export async function mountMyFeedback(root, ctx, handle) {
   }
   const list = h('div', { class: 'item-list' });
   section.append(list);
-  data.items.forEach((item) => list.append(feedbackCard(item, ctx, handle)));
+  // 첨부 이미지용 object URL은 화면을 떠날 때 모두 해제한다
+  const urls = createObjectUrlTracker();
+  handle.cleanup = () => urls.revokeAll();
+  data.items.forEach((item) => list.append(feedbackCard(item, ctx, handle, urls)));
 }
 
-function feedbackCard(item, ctx, handle) {
+function feedbackCard(item, ctx, handle, urls) {
   const unread = item.replies.filter((r) => r.unread).length;
   const replyBox = h('div', { class: 'replies' });
   const renderReplies = () => {
@@ -186,7 +190,11 @@ function feedbackCard(item, ctx, handle) {
       onclick: async () => {
         attachmentButton.disabled = true;
         try {
-          const url = await api.getAttachmentUrl(item.id);
+          const url = urls.create(await api.getAttachmentBlob(item.id));
+          if (handle.cancelled) {
+            urls.revoke(url);
+            return;
+          }
           clear(attachmentBox).append(h('img', { class: 'screenshot', src: url, alt: '첨부한 스크린샷' }));
           attachmentButton.hidden = true;
         } catch (e) {

@@ -2,9 +2,12 @@ package crossword2.auth;
 
 import java.util.UUID;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+
+import crossword2.common.ApiException;
 
 /**
  * 계정(회원/게스트) 행 잠금. 같은 사용자의 기록 갱신(풀이 종료, 게스트 이전)을 직렬화한다.
@@ -33,5 +36,29 @@ public class AccountLock {
 		} catch (IllegalArgumentException e) {
 			// 형식이 잘못된 주체는 잠글 계정이 없다
 		}
+	}
+
+	/**
+	 * 새 기록(풀이 세션, 문의)을 만들기 전에 계정 행을 잠그고 아직 쓸 수 있는 계정인지 확인한다. 이전된 게스트나 없는 계정이면 401.
+	 * 잠금을 얻은 뒤에 확인하므로, 게스트 이전이 먼저 끝났다면 주인 없는 데이터가 새로 생기지 않는다.
+	 */
+	@Transactional(propagation = Propagation.MANDATORY)
+	public void lockActive(Owner owner) {
+		try {
+			if (owner.type() == OwnerType.GUEST) {
+				GuestAccount guest = guests.findForUpdate(UUID.fromString(owner.id())).orElseThrow(AccountLock::gone);
+				if (guest.getMigratedToUserId() != null) {
+					throw new ApiException(HttpStatus.UNAUTHORIZED, "GUEST_MIGRATED", "this guest has been migrated to a member");
+				}
+			} else {
+				users.findForUpdate(Long.parseLong(owner.id())).orElseThrow(AccountLock::gone);
+			}
+		} catch (IllegalArgumentException e) {
+			throw gone();
+		}
+	}
+
+	private static ApiException gone() {
+		return new ApiException(HttpStatus.UNAUTHORIZED, "ACCOUNT_NOT_FOUND", "account no longer exists");
 	}
 }

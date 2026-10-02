@@ -2,6 +2,7 @@ import { h, clear } from './dom.js';
 import * as api from './api.js';
 import * as auth from './auth.js';
 import * as R from './review-model.js';
+import { listen, singleSlot } from './lifecycle.js';
 import { DIFFICULTY_LABEL, POS_LABEL, STATUS_LABEL, formatDateTime, formatTime, topicLabel } from './labels.js';
 
 const PAGE_SIZE = 20;
@@ -89,6 +90,9 @@ export async function mountWrongAnswers(root, ctx, handle) {
 
   const state = { sort: 'recent' };
   const body = h('div', {});
+  // 복습 중의 키보드 리스너는 한 번에 하나만 둔다. 복습을 끝내거나 다시 시작하거나 화면을 떠나면 바로 제거한다.
+  const keyboard = singleSlot();
+  handle.cleanup = () => keyboard.dispose();
   root.append(h('section', { class: 'notebook' }, h('h1', {}, '오답노트'),
     h('p', { class: 'muted' }, '틀렸거나 힌트를 썼거나 끝까지 못 맞힌 단어예요. 끝난 풀이의 단어만 모여요.'),
     body));
@@ -134,6 +138,7 @@ export async function mountWrongAnswers(root, ctx, handle) {
 
   /** 노트 전체(최대 REVIEW_MAX_ITEMS)를 불러와 복습 덱을 만든다. */
   async function startReview() {
+    keyboard.dispose();
     clear(body).append(h('p', { class: 'muted' }, '복습할 단어를 불러오는 중…'));
     const items = [];
     try {
@@ -158,7 +163,13 @@ export async function mountWrongAnswers(root, ctx, handle) {
     const nextBtn = h('button', { type: 'button', class: 'primary', onclick: () => update(R.next(deck)) }, '다음 →');
     const flipBtn = h('button', { type: 'button', onclick: () => update(R.flip(deck)) }, '뒤집기');
     const shuffleBtn = h('button', { type: 'button', onclick: () => update(R.reshuffle(deck)) }, '섞기');
-    const exitBtn = h('button', { type: 'button', onclick: () => render() }, '목록으로');
+    const exitBtn = h('button', {
+      type: 'button',
+      onclick: () => {
+        keyboard.dispose();
+        render();
+      },
+    }, '목록으로');
 
     function update(next) {
       deck = next;
@@ -191,12 +202,7 @@ export async function mountWrongAnswers(root, ctx, handle) {
       } else return;
       if (e.key.startsWith('Arrow')) e.preventDefault();
     }
-    document.addEventListener('keydown', onKeydown);
-    const previousCleanup = handle.cleanup;
-    handle.cleanup = () => {
-      document.removeEventListener('keydown', onKeydown);
-      previousCleanup?.();
-    };
+    keyboard.set(listen(document, 'keydown', onKeydown));
 
     clear(body).append(
       h('div', { class: 'review' }, counter, card,
