@@ -64,13 +64,44 @@ export async function startGuest(nickname) {
   replaceState(fromResponse(await rawRequest('POST', '/api/auth/guest', { body: { nickname } })));
 }
 
-export async function signup(email, password, nickname) {
-  replaceState(fromResponse(await rawRequest('POST', '/api/auth/signup', { body: { email, password, nickname } })));
+/** 게스트로 로그인한 상태면 기록 이전의 소유 증명(게스트 ID + 게스트 access 토큰)을 만든다. */
+async function guestProof() {
+  const user = currentUser();
+  if (user?.type !== 'GUEST') return null;
+  const token = await getAccessToken(); // 만료됐으면 먼저 갱신한다
+  const still = currentUser();
+  return token && still?.type === 'GUEST' && still.id === user.id ? { guestId: user.id, token } : null;
 }
 
-export async function login(email, password) {
-  replaceState(fromResponse(await rawRequest('POST', '/api/auth/login', { body: { email, password } })));
+const GUEST_PROBLEMS = ['UNAUTHORIZED', 'GUEST_PROOF_INVALID', 'GUEST_ALREADY_MIGRATED', 'ACCOUNT_NOT_FOUND'];
+
+/**
+ * 가입/로그인 공통: 게스트 증명이 있으면 함께 보내 기록을 이어받는다. 서버가 게스트 정보를 거부하면
+ * (이미 이전됐거나 만료/위조) 이 기기의 게스트 상태를 지우고 알려, 같은 폼을 다시 제출하면 새로 시작하게 한다.
+ * @returns {Promise<{guestMigrated: boolean}>}
+ */
+async function authenticate(url, body) {
+  const proof = await guestProof();
+  let res;
+  try {
+    res = await rawRequest('POST', url, { body: proof ? { ...body, guestId: proof.guestId } : body, token: proof?.token });
+  } catch (e) {
+    if (proof && e instanceof ApiError && GUEST_PROBLEMS.includes(e.code)) {
+      replaceState(null);
+      throw new ApiError(e.status, 'GUEST_REJECTED', GUEST_REJECTED_MESSAGE);
+    }
+    throw e;
+  }
+  replaceState(fromResponse(res));
+  return { guestMigrated: res.guestMigrated === true };
 }
+
+const GUEST_REJECTED_MESSAGE =
+  '게스트 정보를 확인할 수 없어 기록을 이어받지 못했어요. 같은 내용으로 다시 시도하면 새로 시작할 수 있어요.';
+
+export const signup = (email, password, nickname) => authenticate('/api/auth/signup', { email, password, nickname });
+
+export const login = (email, password) => authenticate('/api/auth/login', { email, password });
 
 export async function logout() {
   const token = state?.refreshToken;

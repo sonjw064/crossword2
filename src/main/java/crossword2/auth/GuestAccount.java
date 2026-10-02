@@ -33,6 +33,10 @@ public class GuestAccount {
 		this.createdAt = createdAt;
 	}
 
+	public void markMigrated(Long userId) {
+		this.migratedToUserId = userId;
+	}
+
 	public UUID getId() {
 		return id;
 	}

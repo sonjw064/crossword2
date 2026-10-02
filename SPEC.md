@@ -156,7 +156,13 @@
 
 **인증** (게스트와 회원 모두 같은 방식의 토큰을 받는다)
 - `POST /api/auth/guest` `{nickname}` 게스트 생성 및 토큰 발급 (201)
-- `POST /api/auth/signup` `{email, password, nickname}` (201), `POST /api/auth/login` `{email, password}` (게스트 기록 이전은 2-2에서 추가)
+- `POST /api/auth/signup` `{email, password, nickname, guestId?}` (201), `POST /api/auth/login` `{email, password, guestId?}`
+- **게스트 기록 이전**: `guestId`가 있으면 그 게스트의 기록(풀이 세션 등)을 회원으로 이전한다. 소유 증명으로 **그 게스트의 access 토큰을 `Authorization: Bearer`로 함께 보내야** 하며(게스트 ID만으로는 불가), 토큰의 게스트 ID와 `guestId`가 일치해야 한다. 응답의 `guestMigrated`가 true면 이전된 것이다
+  - 게스트 ID당 **한 번만** 이전된다(`GuestAccount.migratedToUserId`). 한 회원이 여러 게스트를 이전하는 것은 허용한다
+  - 가입은 회원 생성과 이전을 한 트랜잭션으로 처리한다(이전이 실패하면 가입도 취소). 로그인은 자격 증명이 맞은 뒤에만 이전한다
+  - 이전 후 그 게스트의 refresh 토큰은 폐기되고 access 토큰도 거부된다(401). 같은 게스트를 동시에 이전하려는 요청 중 하나만 성공한다
+  - 오류: 증명이 없거나 다른 게스트/회원 토큰이면 403 `GUEST_PROOF_INVALID`, 이미 이전된 게스트면 409 `GUEST_ALREADY_MIGRATED`, `guestId` 형식이 틀리면 400
+  - 이전 대상 데이터는 `GuestDataMigrator` 구현체가 처리한다. 소유자(ownerType/ownerId)를 가지는 새 데이터(풀이 기록, 오답노트, 문의, 대련 기록)는 반드시 구현체를 등록한다
 - `POST /api/auth/refresh` `{refreshToken}` 새 토큰 쌍 발급(교체), `POST /api/auth/logout` `{refreshToken}` 토큰 폐기(204)
 - `GET /api/me` 현재 주체(게스트/회원) 프로필. 토큰 필수
 - 응답: `{accessToken, expiresIn(초), refreshToken, ownerType, ownerId, nickname, role}` (`role`은 회원만)

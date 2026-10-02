@@ -15,9 +15,9 @@ function fakeStorage(initial = {}) {
   };
 }
 
-function tokenResponse(name, refresh, expiresIn = 10) {
+function tokenResponse(name, refresh, expiresIn = 10, ownerType = 'MEMBER') {
   // expiresIn이 60초 미만이면 getAccessToken이 곧바로 refresh를 시도한다
-  return { accessToken: `access-${name}`, expiresIn, refreshToken: refresh, ownerType: 'MEMBER', ownerId: '1', nickname: name, role: 'USER' };
+  return { accessToken: `access-${name}`, expiresIn, refreshToken: refresh, ownerType, ownerId: ownerType === 'GUEST' ? 'guest-uuid-1' : '1', nickname: name, role: 'USER' };
 }
 
 const json = (status, body) => ({ ok: status < 400, status, text: async () => JSON.stringify(body) });
@@ -34,7 +34,7 @@ async function setup(routes, storage = fakeStorage()) {
   globalThis.localStorage = storage;
   globalThis.fetch = async (url, init) => {
     const body = init?.body ? JSON.parse(init.body) : undefined;
-    calls.push({ url, body });
+    calls.push({ url, body, headers: init?.headers ?? {} });
     const handler = routes[url];
     if (!handler) throw new Error(`unexpected request ${url}`);
     return handler(body);
@@ -169,4 +169,91 @@ test('저장된 로그인 상태를 불러오고, 저장소를 못 쓰면 메모
   });
   await broken.auth.login('a@b.com', 'secret123');
   assert.equal(broken.auth.currentUser().nickname, 'kim');
+});
+
+// ---- 게스트 기록 이전 (가입/로그인 때 게스트 증명을 함께 보낸다) ----
+
+test('게스트로 가입하면 게스트 ID와 게스트 토큰을 함께 보내고, 이어받았는지 알려준다', async () => {
+  const { auth, calls } = await setup({
+    '/api/auth/guest': () => json(200, tokenResponse('손님', 'g1', 1800, 'GUEST')),
+    '/api/auth/signup': () => json(201, { ...tokenResponse('kim', 'm1', 1800), guestMigrated: true }),
+  });
+  await auth.startGuest('손님');
+
+  const result = await auth.signup('a@b.com', 'secret123', 'kim');
+
+  const [call] = callsTo(calls, '/api/auth/signup');
+  assert.equal(call.body.guestId, 'guest-uuid-1');
+  assert.equal(call.headers.Authorization, 'Bearer access-손님');
+  assert.deepEqual(result, { guestMigrated: true });
+  assert.equal(auth.currentUser().type, 'MEMBER');
+});
+
+test('게스트가 아니면 증명을 보내지 않는다', async () => {
+  const { auth, calls } = await setup({
+    '/api/auth/login': () => json(200, tokenResponse('kim', 'm1', 1800)),
+    '/api/auth/signup': () => json(201, tokenResponse('lee', 'm2', 1800)),
+  });
+
+  await auth.login('a@b.com', 'secret123');
+  await auth.signup('c@d.com', 'secret123', 'lee');
+
+  for (const url of ['/api/auth/login', '/api/auth/signup']) {
+    const [call] = callsTo(calls, url);
+    assert.equal(call.body.guestId, undefined);
+    assert.equal(call.headers.Authorization, undefined);
+  }
+});
+
+test('게스트 토큰이 만료돼 있으면 먼저 갱신한 토큰으로 증명한다', async () => {
+  const { auth, calls } = await setup({
+    '/api/auth/guest': () => json(200, tokenResponse('손님', 'g1', 10, 'GUEST')), // 곧 만료
+    '/api/auth/refresh': () => json(200, tokenResponse('손님', 'g2', 1800, 'GUEST')),
+    '/api/auth/signup': () => json(201, { ...tokenResponse('kim', 'm1', 1800), guestMigrated: true }),
+  });
+  await auth.startGuest('손님');
+
+  await auth.signup('a@b.com', 'secret123', 'kim');
+
+  assert.equal(callsTo(calls, '/api/auth/refresh').length, 1);
+  assert.equal(callsTo(calls, '/api/auth/signup')[0].headers.Authorization, 'Bearer access-손님');
+});
+
+test('서버가 게스트 정보를 거부하면 게스트 상태를 지우고 다시 시도하게 안내한다', async () => {
+  for (const [status, code] of [[401, 'UNAUTHORIZED'], [403, 'GUEST_PROOF_INVALID'], [409, 'GUEST_ALREADY_MIGRATED']]) {
+    const { auth, storage } = await setup({
+      '/api/auth/guest': () => json(200, tokenResponse('손님', 'g1', 1800, 'GUEST')),
+      '/api/auth/signup': () => json(status, { code }),
+    });
+    await auth.startGuest('손님');
+
+    await assert.rejects(auth.signup('a@b.com', 'secret123', 'kim'), (e) => e.code === 'GUEST_REJECTED');
+
+    assert.equal(auth.currentUser(), null, `${code}: 게스트 상태 정리`);
+    assert.equal(storage.raw('crossword.auth'), null);
+  }
+});
+
+test('비밀번호가 틀린 것(401)은 게스트 거부로 취급하지 않고 게스트 상태를 유지한다', async () => {
+  const { auth } = await setup({
+    '/api/auth/guest': () => json(200, tokenResponse('손님', 'g1', 1800, 'GUEST')),
+    '/api/auth/login': () => json(401, { code: 'INVALID_CREDENTIALS' }),
+  });
+  await auth.startGuest('손님');
+
+  await assert.rejects(auth.login('a@b.com', 'wrongpass1'), (e) => e.code === 'INVALID_CREDENTIALS');
+
+  assert.equal(auth.currentUser().type, 'GUEST');
+});
+
+test('이메일 중복 같은 일반 오류는 게스트 상태를 건드리지 않는다', async () => {
+  const { auth } = await setup({
+    '/api/auth/guest': () => json(200, tokenResponse('손님', 'g1', 1800, 'GUEST')),
+    '/api/auth/signup': () => json(409, { code: 'EMAIL_TAKEN' }),
+  });
+  await auth.startGuest('손님');
+
+  await assert.rejects(auth.signup('a@b.com', 'secret123', 'kim'), (e) => e.code === 'EMAIL_TAKEN');
+
+  assert.equal(auth.currentUser().type, 'GUEST');
 });

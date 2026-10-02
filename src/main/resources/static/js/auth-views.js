@@ -12,6 +12,19 @@ export const passwordError = (value) =>
     ? ''
     : '비밀번호는 8자 이상이고 글자와 숫자를 모두 포함해야 해요.';
 
+/** 게스트로 쌓은 기록이 이어진다는 안내(게스트일 때)와, 다른 기기의 게스트 데이터는 연결할 수 없다는 안내. */
+function guestNotice() {
+  const guest = auth.currentUser()?.type === 'GUEST';
+  return h('p', { class: 'muted guest-notice' },
+    guest ? '게스트로 쌓은 기록(풀이 내역)이 이 계정으로 이어져요. ' : '',
+    '다른 기기나 브라우저에서 쌓은 게스트 데이터는 연결할 수 없어요.');
+}
+
+function welcome(ctx, result) {
+  if (result.guestMigrated) ctx.toast('게스트 기록을 이어받았어요.');
+  ctx.navigate('#/');
+}
+
 function field(label, input) {
   return h('label', { class: 'field' }, h('span', { class: 'label' }, label), input);
 }
@@ -50,10 +63,9 @@ export function mountLogin(root, ctx) {
   const f = form('로그인',
     () => (!EMAIL.test(email.value.trim()) ? '이메일을 확인해 주세요.' : !password.value ? '비밀번호를 입력해 주세요.' : ''),
     async () => {
-      await auth.login(email.value.trim(), password.value);
-      ctx.navigate('#/');
+      welcome(ctx, await auth.login(email.value.trim(), password.value));
     });
-  f.el.append(field('이메일', email), field('비밀번호', password), f.errorEl, f.button);
+  f.el.append(field('이메일', email), field('비밀번호', password), guestNotice(), f.errorEl, f.button);
   root.append(h('section', { class: 'auth' },
     h('h1', {}, '로그인'), f.el,
     h('p', { class: 'muted' }, '계정이 없나요? ', h('a', { href: '#/signup' }, '회원가입'))));
@@ -68,13 +80,12 @@ export function mountSignup(root, ctx) {
     () => (!EMAIL.test(email.value.trim()) ? '이메일을 확인해 주세요.'
       : nicknameError(nickname.value.trim()) || passwordError(password.value)),
     async () => {
-      await auth.signup(email.value.trim(), password.value, nickname.value.trim());
-      ctx.navigate('#/');
+      welcome(ctx, await auth.signup(email.value.trim(), password.value, nickname.value.trim()));
     });
   f.el.append(
     field('이메일', email), field('닉네임', nickname), field('비밀번호', password),
     h('p', { class: 'muted' }, '비밀번호는 8자 이상, 글자와 숫자를 모두 포함해 주세요.'),
-    f.errorEl, f.button);
+    guestNotice(), f.errorEl, f.button);
   root.append(h('section', { class: 'auth' },
     h('h1', {}, '회원가입'), f.el,
     h('p', { class: 'muted' }, '이미 계정이 있나요? ', h('a', { href: '#/login' }, '로그인'))));

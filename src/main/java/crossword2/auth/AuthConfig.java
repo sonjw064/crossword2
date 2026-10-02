@@ -20,7 +20,10 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
+import org.springframework.security.oauth2.core.OAuth2TokenValidator;
+import org.springframework.security.oauth2.core.OAuth2TokenValidatorResult;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtIssuerValidator;
 import org.springframework.security.oauth2.jwt.JwtTimestampValidator;
@@ -54,16 +57,20 @@ public class AuthConfig {
 	}
 
 	@Bean
-	JwtDecoder jwtDecoder(SecretKey jwtSecretKey, Clock clock) {
-		return buildDecoder(jwtSecretKey, clock);
+	JwtDecoder jwtDecoder(SecretKey jwtSecretKey, Clock clock, GuestAccountRepository guests) {
+		return buildDecoder(jwtSecretKey, clock, new MigratedGuestTokenValidator(guests));
 	}
 
 	/** 만료 판단에 주입된 Clock을 쓰도록 검증기를 구성한다(테스트에서 시간을 움직일 수 있다). */
 	static JwtDecoder buildDecoder(SecretKey key, Clock clock) {
+		return buildDecoder(key, clock, jwt -> OAuth2TokenValidatorResult.success());
+	}
+
+	static JwtDecoder buildDecoder(SecretKey key, Clock clock, OAuth2TokenValidator<Jwt> extra) {
 		NimbusJwtDecoder decoder = NimbusJwtDecoder.withSecretKey(key).macAlgorithm(MacAlgorithm.HS256).build();
 		JwtTimestampValidator timestamps = new JwtTimestampValidator(Duration.ZERO);
 		timestamps.setClock(clock);
-		decoder.setJwtValidator(new DelegatingOAuth2TokenValidator<>(timestamps, new JwtIssuerValidator(ISSUER)));
+		decoder.setJwtValidator(new DelegatingOAuth2TokenValidator<>(timestamps, new JwtIssuerValidator(ISSUER), extra));
 		return decoder;
 	}
 

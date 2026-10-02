@@ -80,7 +80,7 @@ public class TokenService {
 		tokens.save(new RefreshToken(hash(raw), familyId, account.owner(), now, now.plus(ttl)));
 		AccessToken access = jwt.issue(account);
 		return new TokenResponse(access.value(), access.expiresInSeconds(), raw, account.owner().type(),
-				account.owner().id(), account.nickname(), account.role());
+				account.owner().id(), account.nickname(), account.role(), false);
 	}
 
 	private String newRawToken() {

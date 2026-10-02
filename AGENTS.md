@@ -25,7 +25,8 @@
 8. 시크릿(JWT 키, DB 비밀번호)은 코드에 쓰지 않고 환경변수로 받는다.
 9. 컨트롤러는 `@AuthenticationPrincipal Jwt`를 `Owner.fromJwt()`로 바꿔 쓴다(익명이면 null). 비밀번호는 BCrypt, refresh 토큰은 해시만 저장한다.
 10. 클라이언트 IP는 `request.getRemoteAddr()`만 쓰고 `X-Forwarded-For` 등을 직접 읽지 않는다(프록시 신뢰는 prod 설정의 `native` 전략과 `TRUSTED_PROXIES`로만 처리). 관리자 권한은 JWT claim만 믿지 말고 DB의 현재 role을 확인한다.
-11. 응답에 CSP(`default-src 'self'`)가 붙는다. 프론트에서 인라인 스크립트나 `style` 속성(`setAttribute('style')`)을 쓰지 말고 `element.style.setProperty`를 쓴다.
+11. 소유자(ownerType/ownerId)를 가지는 데이터 모델을 추가하면 반드시 `GuestDataMigrator` 구현체를 만들어 게스트 → 회원 이전에 포함시키고, 이전 테스트를 추가한다.
+12. 응답에 CSP(`default-src 'self'`)가 붙는다. 프론트에서 인라인 스크립트나 `style` 속성(`setAttribute('style')`)을 쓰지 말고 `element.style.setProperty`를 쓴다.
 
 ## 명령어
 - 빌드/테스트: `./gradlew build`
